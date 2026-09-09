@@ -55,6 +55,7 @@ public:
     char* c_mnt_path = (char*)"/tmp/edbMount";
 
     EDBInterface();
+    explicit EDBInterface(std::unique_ptr<EDBTransport> transport);
     ~EDBInterface();
     EDBInterface(const EDBInterface&) = delete;
     EDBInterface& operator=(const EDBInterface&) = delete;

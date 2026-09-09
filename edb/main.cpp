@@ -1,5 +1,6 @@
 #include "EDBInterface.h"
 #include "EDBLog.h"
+#include "EDBUtils.h"
 #include <cerrno>
 #include <climits>
 #include <cstring>
@@ -31,21 +32,6 @@ void showUsage() {
               << "Other:\n"
               << "  -r, --reboot                 Reboot after all operations complete.\n"
               << "  -h, --help                  Show this help and exit.\n";
-}
-
-bool parsePage(const char* text, uint32_t* page) {
-    if (!text || !*text || text[0] == '-') {
-        return false;
-    }
-    errno = 0;
-    char* end = nullptr;
-    const unsigned long value = std::strtoul(text, &end, 10);
-    if (errno == ERANGE || *end != '\0' ||
-        value > (std::numeric_limits<uint32_t>::max)()) {
-        return false;
-    }
-    *page = static_cast<uint32_t>(value);
-    return true;
 }
 
 void handleInterrupt(int id) {

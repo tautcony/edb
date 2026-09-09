@@ -1,6 +1,7 @@
 #include "EDBInterface.h"
 #include "EDBLog.h"
 #include "EDBTransport.h"
+#include "EDBUtils.h"
 
 #include <cstdint>
 #include <cstdio>
@@ -37,16 +38,11 @@ long long getTime() {
 #endif
 }
 
-unsigned char blockChksum(char* block, unsigned int blockSize) {
-    unsigned char sum = 0x5A;
-    for (unsigned int i = 0; i < blockSize; i++) {
-        sum += block[i];
-    }
-    return sum;
-}
-
 EDBInterface::EDBInterface()
     : transport(createEDBTransport()) {}
+
+EDBInterface::EDBInterface(std::unique_ptr<EDBTransport> transport)
+    : transport(std::move(transport)) {}
 
 EDBInterface::~EDBInterface() {
     close();
