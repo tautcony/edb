@@ -2,7 +2,11 @@
 #include <cstring>
 #include <iostream>
 #include <signal.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 #include <vector>
 
 using namespace std;
@@ -31,9 +35,13 @@ void handleInterrupt(int id) {
 }
 
 int main(int argc, char* argv[]) {
+#ifdef _WIN32
+    signal(SIGINT, handleInterrupt);
+#else
     struct sigaction sigHandler;
     sigHandler.sa_handler = handleInterrupt;
     sigaction(SIGINT, &sigHandler, NULL);
+#endif
 
     bool reboot = false;
     bool mscmode = false;
@@ -111,19 +119,24 @@ int main(int argc, char* argv[]) {
     if (serialPath) {
         edb.setSerialPort(serialPath);
     }
+    cout << "[1/3] Opening " << (useMassStorage ? "USB mass storage" : "serial transport") << "..." << endl;
     if (edb.open(useMassStorage)) {
+        cerr << "[FAIL] Unable to open the selected transport." << endl;
         edb.close();
         return -1;
     }
+    cout << "[2/3] Transport opened." << endl;
 
+    cout << "[3/3] Sending PING and waiting for PONG..." << endl;
     if (edb.ping() == false) {
-        cout << "Device not responding." << endl;
+        cout << "[FAIL] Device did not respond to PING." << endl;
         edb.close();
         return 10;
     }
+    cout << "Device responded with PONG." << endl;
 
     if (checkOnly) {
-        cout << "Device connection and mount check passed." << endl;
+        cout << "PASS: device connection and transport access check passed." << endl;
         edb.close();
         return 0;
     }

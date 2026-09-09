@@ -39,6 +39,9 @@ dist/
 # VS Code
 .vscode/
 
+# VS
+.vs/
+
 # ExistOS
 *.sys
 *.sb

@@ -6,12 +6,12 @@
 using namespace std;
 
 std::wstring stringToWString(const std::string& orig) {
-    int length = MultiByteToWideChar(CP_ACP, 0, orig.c_str(), -1, NULL, 0);
+    int length = MultiByteToWideChar(CP_UTF8, 0, orig.c_str(), -1, NULL, 0);
     if (length <= 0) {
         return std::wstring();
     }
     std::wstring result(length, L'\0');
-    MultiByteToWideChar(CP_ACP, 0, orig.c_str(), -1, &result[0], length);
+    MultiByteToWideChar(CP_UTF8, 0, orig.c_str(), -1, &result[0], length);
     result.resize(length - 1);
     return result;
 }

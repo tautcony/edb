@@ -6,24 +6,37 @@
 #include <cstring>
 #include <iostream>
 #include <time.h>
+#ifdef _WIN32
+#include <malloc.h>
+#include <windows.h>
+#else
 #include <unistd.h>
+#endif
 
 using namespace std;
 
 namespace {
     AlignedBuffer alignedBuffer(size_t alignment, size_t size) {
+#ifdef _WIN32
+        return AlignedBuffer(static_cast<char*>(_aligned_malloc(size, alignment)));
+#else
         void* buffer = nullptr;
         if (posix_memalign(&buffer, alignment, size) != 0) {
             return AlignedBuffer(nullptr);
         }
         return AlignedBuffer(static_cast<char*>(buffer));
+#endif
     }
 } // namespace
 
 long long getTime() {
+#ifdef _WIN32
+    return static_cast<long long>(GetTickCount64());
+#else
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
+#endif
 }
 
 unsigned char blockChksum(char* block, unsigned int blockSize) {
@@ -203,7 +216,11 @@ bool EDBInterface::ping() {
             strcmp(wrBuf.get(), "PONG\n") == 0) {
             return true;
         }
+    #ifdef _WIN32
+        Sleep(2000);
+    #else
         sleep(2);
+    #endif
         retry--;
     }
     return false;

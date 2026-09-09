@@ -106,20 +106,34 @@ edb/
 ├── EDBSerialPosix.cpp/h        Posix 串口实现
 ├── CComHelper.cpp/h            Windows 串口通信辅助类
 ├── WinReg.cpp/h                Windows注册表操作
-└── edb.vcxproj                 Visual Studio工程文件
+└── scripts/                    构建和打包脚本
 ```
 
 ## 编译说明
 
 ### Windows
 
-该项目使用Visual Studio进行开发和编译。可以通过以下步骤编译项目：
+项目使用 CMake 生成 Visual Studio 工程并进行编译：
 
-1. 使用Visual Studio打开 `edb.sln` 解决方案文件
-2. 选择目标平台和配置（Debug/Release）
-3. 构建解决方案
+```powershell
+.\scripts\build.ps1
+```
 
-编译完成后，可执行文件将位于相应的输出目录中。
+默认使用 Visual Studio 2026、x64 和 Release 配置。可通过参数覆盖默认值：
+
+```powershell
+.\scripts\build.ps1 -BuildType Debug
+```
+
+编译完成后，可执行文件位于 `build\Release\edb.exe`。
+
+生成 Windows 发布包：
+
+```powershell
+.\scripts\package.ps1
+```
+
+Visual Studio 工程文件由 CMake 生成在构建目录中，不需要手动维护。
 
 Windows 后端使用 Windows SDK 提供的 Win32 API，链接系统库 `Advapi32.lib`。
 

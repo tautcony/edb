@@ -17,7 +17,11 @@ class EDBTransport;
 
 struct AlignedBufferDeleter {
     void operator()(char* buffer) const {
+#ifdef _WIN32
+        _aligned_free(buffer);
+#else
         free(buffer);
+#endif
     }
 };
 

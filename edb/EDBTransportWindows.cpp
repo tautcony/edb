@@ -1,6 +1,6 @@
 #include "EDBTransport.h"
 #include "CComHelper.h"
-#include "WinReg.h"
+#include "EDBWinReg.h"
 
 #include <windows.h>
 
@@ -141,31 +141,43 @@ namespace {
             if (mode == EDBTransportMode::Serial) {
                 std::string port = preferredPath ? preferredPath : "";
                 if (port.empty()) {
+                    std::cout << "  Detecting ExistOS serial port..." << std::endl;
                     port = findSerialPort();
+                } else {
+                    std::cout << "  Using requested serial port: " << port << std::endl;
                 }
                 if (port.empty()) {
-                    std::cerr << "Unable to find ExistOS serial port." << std::endl;
+                    std::cerr << "  [FAIL] No ExistOS serial port found." << std::endl;
                     return -1;
                 }
+                std::cout << "  Identified serial port: " << port << std::endl;
+                std::cout << "  Opening serial port..." << std::endl;
                 if (!com.Open(port)) {
+                    std::cerr << "  [FAIL] Unable to open serial port: " << port << std::endl;
                     return -1;
                 }
                 com.Set();
                 serialMode = true;
+                std::cout << "  Serial port configured: 115200 baud, 8N2." << std::endl;
                 return 0;
             }
 
+            std::cout << "  Searching for ExistOS mass storage volume..." << std::endl;
             const std::wstring root = findMassStorageRoot();
             if (root.empty()) {
-                std::cerr << "Unable to find ExistOS mass storage volume." << std::endl;
+                std::cerr << "  [FAIL] No ExistOS mass storage volume found." << std::endl;
                 return -1;
             }
+            std::wcout << L"  Identified mass storage volume: " << root << std::endl;
+            std::wcout << L"  Opening " << root << L"cmd_port and " << root << L"dat_port..." << std::endl;
             hCMDf = openFile(root + L"cmd_port");
             hDATf = openFile(root + L"dat_port");
             if (hCMDf == INVALID_HANDLE_VALUE || hDATf == INVALID_HANDLE_VALUE) {
+                std::cerr << "  [FAIL] Unable to open mass storage ports." << std::endl;
                 close();
                 return -1;
             }
+            std::cout << "  Mass storage ports opened." << std::endl;
             return 0;
         }
 

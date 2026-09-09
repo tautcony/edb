@@ -1,4 +1,4 @@
-#include "WinReg.h"
+#include "EDBWinReg.h"
 
 #define debug(fmt, ...)
 
