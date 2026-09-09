@@ -1,6 +1,6 @@
 #include "EDBInterface.h"
+#include "EDBLog.h"
 #include <cstring>
-#include <iostream>
 #include <signal.h>
 #ifdef _WIN32
 #include <windows.h>
@@ -9,26 +9,24 @@
 #endif
 #include <vector>
 
-using namespace std;
-
-vector<flashImg> imglist;
+std::vector<flashImg> imglist;
 
 EDBInterface edb;
 
 void showUsage() {
-    cout << "Usage:" << endl;
-    cout << "\t-f <bin file> <page> [b] (Specify 'b' to flash as boot image.)" << endl;
-    cout << "\t-p <serial port> Use serial transport instead of USB MSC." << endl;
-    cout << "\t--serial       Auto-detect a serial transport." << endl;
-    cout << "\t-s             Use USB MSC transport." << endl;
-    cout << "\t-r Reboot if all operations are done." << endl;
-    cout << "\t-m Enter Mass Storage mode." << endl;
-    cout << "\t-c, --check Check device connection and mount access only." << endl;
+    std::cout << "Usage:" << std::endl;
+    std::cout << "\t-f <bin file> <page> [b] (Specify 'b' to flash as boot image.)" << std::endl;
+    std::cout << "\t-p <serial port> Use serial transport instead of USB MSC." << std::endl;
+    std::cout << "\t--serial       Auto-detect a serial transport." << std::endl;
+    std::cout << "\t-s             Use USB MSC transport." << std::endl;
+    std::cout << "\t-r Reboot if all operations are done." << std::endl;
+    std::cout << "\t-m Enter Mass Storage mode." << std::endl;
+    std::cout << "\t-c, --check Check device connection and mount access only." << std::endl;
 }
 
 void handleInterrupt(int id) {
     (void)id;
-    printf("\nInterrupted\n");
+    EDB_LOG_WARN("CLI", "Interrupted by user.");
     edb.close();
     imglist.clear();
     exit(-1);
@@ -69,19 +67,19 @@ int main(int argc, char* argv[]) {
             // printf("Open: %s\n", argv[i + 1]);
             item.f.reset(fopen(argv[i + 1], "rb"));
             if (!item.f) {
-                printf("Open: %s Failed.\n", argv[i + 1]);
+                EDB_LOG_ERROR("CLI", "Unable to open firmware file: " << argv[i + 1]);
                 return -1;
             }
             item.filename = argv[i + 1];
             item.toPage = atoi(argv[i + 2]);
             if (i + 3 < argc) {
                 if (strcmp(argv[i + 3], "b") == 0) {
-                    printf("Set as boot img.\n");
+                    EDB_LOG_INFO("CLI", "Firmware will be written as boot image.");
                     item.bootImg = true;
                     i++;
                 }
             }
-            printf("Flash to page: %d\n", item.toPage);
+            EDB_LOG_INFO("CLI", "Firmware target page: " << item.toPage);
             imglist.push_back(std::move(item));
             i += 2;
         }
@@ -119,24 +117,24 @@ int main(int argc, char* argv[]) {
     if (serialPath) {
         edb.setSerialPort(serialPath);
     }
-    cout << "[1/3] Opening " << (useMassStorage ? "USB mass storage" : "serial transport") << "..." << endl;
+    EDB_LOG_INFO("CLI", "[1/3] Opening " << (useMassStorage ? "USB mass storage" : "serial transport") << "...");
     if (edb.open(useMassStorage)) {
-        cerr << "[FAIL] Unable to open the selected transport." << endl;
+        EDB_LOG_ERROR("CLI", "[1/3] Unable to open the selected transport.");
         edb.close();
         return -1;
     }
-    cout << "[2/3] Transport opened." << endl;
+    EDB_LOG_INFO("CLI", "[2/3] Transport opened.");
 
-    cout << "[3/3] Sending PING and waiting for PONG..." << endl;
+    EDB_LOG_INFO("CLI", "[3/3] Sending PING and waiting for PONG...");
     if (edb.ping() == false) {
-        cout << "[FAIL] Device did not respond to PING." << endl;
+        EDB_LOG_ERROR("CLI", "[3/3] Device did not respond to PING.");
         edb.close();
         return 10;
     }
-    cout << "Device responded with PONG." << endl;
+    EDB_LOG_INFO("CLI", "Device responded with PONG.");
 
     if (checkOnly) {
-        cout << "PASS: device connection and transport access check passed." << endl;
+        EDB_LOG_INFO("CLI", "PASS: device connection and transport access check passed.");
         edb.close();
         return 0;
     }

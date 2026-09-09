@@ -1,4 +1,5 @@
 #include "EDBTransport.h"
+#include "EDBLog.h"
 #include "CComHelper.h"
 #include "EDBWinReg.h"
 
@@ -141,43 +142,43 @@ namespace {
             if (mode == EDBTransportMode::Serial) {
                 std::string port = preferredPath ? preferredPath : "";
                 if (port.empty()) {
-                    std::cout << "  Detecting ExistOS serial port..." << std::endl;
+                    EDB_LOG_INFO("Transport", "Detecting ExistOS serial port...");
                     port = findSerialPort();
                 } else {
-                    std::cout << "  Using requested serial port: " << port << std::endl;
+                    EDB_LOG_INFO("Transport", "Using requested serial port: " << port);
                 }
                 if (port.empty()) {
-                    std::cerr << "  [FAIL] No ExistOS serial port found." << std::endl;
+                    EDB_LOG_ERROR("Transport", "No ExistOS serial port found.");
                     return -1;
                 }
-                std::cout << "  Identified serial port: " << port << std::endl;
-                std::cout << "  Opening serial port..." << std::endl;
+                EDB_LOG_INFO("Transport", "Identified serial port: " << port);
+                EDB_LOG_INFO("Transport", "Opening serial port...");
                 if (!com.Open(port)) {
-                    std::cerr << "  [FAIL] Unable to open serial port: " << port << std::endl;
+                    EDB_LOG_ERROR("Transport", "Unable to open serial port: " << port);
                     return -1;
                 }
                 com.Set();
                 serialMode = true;
-                std::cout << "  Serial port configured: 115200 baud, 8N2." << std::endl;
+                EDB_LOG_INFO("Transport", "Serial port configured: 115200 baud, 8N2.");
                 return 0;
             }
 
-            std::cout << "  Searching for ExistOS mass storage volume..." << std::endl;
+            EDB_LOG_INFO("Transport", "Searching for ExistOS mass storage volume...");
             const std::wstring root = findMassStorageRoot();
             if (root.empty()) {
-                std::cerr << "  [FAIL] No ExistOS mass storage volume found." << std::endl;
+                EDB_LOG_ERROR("Transport", "No ExistOS mass storage volume found.");
                 return -1;
             }
-            std::wcout << L"  Identified mass storage volume: " << root << std::endl;
-            std::wcout << L"  Opening " << root << L"cmd_port and " << root << L"dat_port..." << std::endl;
+            EDB_LOG_INFO("Transport", "Identified mass storage volume.");
+            EDB_LOG_INFO("Transport", "Opening mass storage command and data ports...");
             hCMDf = openFile(root + L"cmd_port");
             hDATf = openFile(root + L"dat_port");
             if (hCMDf == INVALID_HANDLE_VALUE || hDATf == INVALID_HANDLE_VALUE) {
-                std::cerr << "  [FAIL] Unable to open mass storage ports." << std::endl;
+                EDB_LOG_ERROR("Transport", "Unable to open mass storage ports.");
                 close();
                 return -1;
             }
-            std::cout << "  Mass storage ports opened." << std::endl;
+            EDB_LOG_INFO("Transport", "Mass storage ports opened.");
             return 0;
         }
 

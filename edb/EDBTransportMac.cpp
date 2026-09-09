@@ -1,5 +1,6 @@
 #include "EDBSerialPosix.h"
 #include "EDBTransport.h"
+#include "EDBLog.h"
 
 #include <CoreFoundation/CoreFoundation.h>
 #include <DiskArbitration/DiskArbitration.h>
@@ -184,40 +185,38 @@ namespace {
 
         int open(EDBTransportMode mode, const char* preferredPath) override {
             if (mode == EDBTransportMode::Serial) {
-                std::cout << "Opening serial transport..." << std::endl;
+                EDB_LOG_INFO("Transport", "Opening serial transport...");
                 if (serial.open(preferredPath) != 0) {
-                    std::cerr << "Unable to open serial transport." << std::endl;
+                    EDB_LOG_ERROR("Transport", "Unable to open serial transport.");
                     return -1;
                 }
                 serialMode = true;
                 return 0;
             }
-            std::cout << "Waiting for USB CDC connection: " << std::flush;
+            EDB_LOG_INFO("Transport", "Waiting for USB CDC connection...");
             for (int retry = 0; retry < 5; retry++) {
                 if (findDevice()) {
                     break;
                 }
                 if (retry == 4) {
-                    std::cerr << "timed out." << std::endl;
+                    EDB_LOG_ERROR("Transport", "Timed out waiting for USB CDC connection.");
                     return -1;
                 }
-                std::cout << ". " << std::flush;
                 sleep(2);
             }
 
-            std::cout << std::endl
-                      << "connected: " << devicePath << std::endl;
-            std::cout << "Mounting USB device..." << std::endl;
+            EDB_LOG_INFO("Transport", "USB CDC connected: " << devicePath);
+            EDB_LOG_INFO("Transport", "Mounting USB device...");
             std::string mountPath = mountPathForDevice(devicePath);
             if (mountPath.empty()) {
                 if (!diskOperation(devicePath, true)) {
-                    std::cerr << "Mounting failed." << std::endl;
+                    EDB_LOG_ERROR("Transport", "Mounting failed.");
                     return -1;
                 }
                 mountPath = mountPathForDevice(devicePath);
             }
             if (mountPath.empty()) {
-                std::cerr << "Mounting failed: mount point unavailable." << std::endl;
+                EDB_LOG_ERROR("Transport", "Mounting failed: mount point unavailable.");
                 return -1;
             }
             mounted = true;
@@ -233,8 +232,7 @@ namespace {
                 fcntl(hDATf, F_NOCACHE, 1);
             }
             if (hCMDf < 0 || hDATf < 0) {
-                std::cerr << "Unable to open device files: " << strerror(errno)
-                          << std::endl;
+                EDB_LOG_ERROR("Transport", "Unable to open device files: " << strerror(errno));
                 close();
                 return -1;
             }
@@ -262,7 +260,7 @@ namespace {
                 hDATf = -1;
             }
             if (mounted && !devicePath.empty()) {
-                std::cout << "Unmounting USB device" << std::endl;
+                EDB_LOG_INFO("Transport", "Unmounting USB device.");
                 diskOperation(devicePath, false);
                 mounted = false;
             }

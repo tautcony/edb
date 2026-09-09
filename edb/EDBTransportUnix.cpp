@@ -1,5 +1,6 @@
 #include "EDBSerialPosix.h"
 #include "EDBTransport.h"
+#include "EDBLog.h"
 
 #include <cerrno>
 #include <cstdio>
@@ -117,33 +118,31 @@ namespace {
 
         int open(EDBTransportMode mode, const char* preferredPath) override {
             if (mode == EDBTransportMode::Serial) {
-                std::cout << "Opening serial transport..." << std::endl;
+                EDB_LOG_INFO("Transport", "Opening serial transport...");
                 if (serial.open(preferredPath) != 0) {
-                    std::cerr << "Unable to open serial transport." << std::endl;
+                    EDB_LOG_ERROR("Transport", "Unable to open serial transport.");
                     return -1;
                 }
                 serialMode = true;
                 return 0;
             }
-            std::cout << "Waiting for USB CDC connection: " << std::flush;
+            EDB_LOG_INFO("Transport", "Waiting for USB CDC connection...");
             for (int retry = 0; retry < 5; retry++) {
                 if (findDevice()) {
                     break;
                 }
                 if (retry == 4) {
-                    std::cerr << "timed out." << std::endl;
+                    EDB_LOG_ERROR("Transport", "Timed out waiting for USB CDC connection.");
                     return -1;
                 }
-                std::cout << ". " << std::flush;
                 sleep(2);
             }
 
-            std::cout << std::endl
-                      << "connected: " << devicePath << std::endl;
-            std::cout << "Mounting USB device..." << std::endl;
+            EDB_LOG_INFO("Transport", "USB CDC connected: " << devicePath);
+            EDB_LOG_INFO("Transport", "Mounting USB device...");
             std::string mountPath;
             if (!mountDevice(&mountPath)) {
-                std::cerr << "Mounting failed." << std::endl;
+                EDB_LOG_ERROR("Transport", "Mounting failed.");
                 return -1;
             }
 
@@ -159,8 +158,7 @@ namespace {
             hDATf = ::open(dataPath.c_str(),
                            O_RDWR | O_CREAT | directFlag | O_SYNC, 0666);
             if (hCMDf < 0 || hDATf < 0) {
-                std::cerr << "Unable to open device files: " << strerror(errno)
-                          << std::endl;
+                EDB_LOG_ERROR("Transport", "Unable to open device files: " << strerror(errno));
                 close();
                 return -1;
             }
@@ -188,7 +186,7 @@ namespace {
                 hDATf = -1;
             }
             if (mounted && !devicePath.empty()) {
-                std::cout << "Unmounting USB device" << std::endl;
+                EDB_LOG_INFO("Transport", "Unmounting USB device.");
                 runCommand("udisksctl unmount -b " + shellQuote(devicePath));
                 mounted = false;
             }

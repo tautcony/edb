@@ -1,10 +1,10 @@
 #include "EDBInterface.h"
+#include "EDBLog.h"
 #include "EDBTransport.h"
 
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
-#include <iostream>
 #include <time.h>
 #ifdef _WIN32
 #include <malloc.h>
@@ -12,8 +12,6 @@
 #else
 #include <unistd.h>
 #endif
-
-using namespace std;
 
 namespace {
     AlignedBuffer alignedBuffer(size_t alignment, size_t size) {
@@ -57,13 +55,13 @@ EDBInterface::~EDBInterface() {
 bool EDBInterface::waitStr(char* str) {
     int retry = 2;
     while (retry > 0) {
-        cout << "Waiting Sync...\r";
+        EDB_LOG_DEBUG("EDB", "Waiting for device response: " << str);
         memset(wrBuf.get(), 0, wrBufSize);
         if (transport->readCommand(wrBuf.get(), wrBufSize) > 0 &&
             strcmp(str, wrBuf.get()) == 0) {
             return true;
         }
-        cout << "Sync Failed... Retry: " << retry << endl;
+        EDB_LOG_WARN("EDB", "Device response mismatch; retry " << retry);
         transport->reset(false);
         retry--;
     }
@@ -100,7 +98,7 @@ bool EDBInterface::eraseBlock(unsigned int block) {
     snprintf(cmdbuf, sizeof(cmdbuf), "ERASEB:%d\n", block);
     wrStr(cmdbuf);
     if (!waitStr((char*)"EROK\n")) {
-        printf("Erase block timed out: %d\n", block);
+        EDB_LOG_ERROR("EDB", "Erase block timed out: " << block);
         return false;
     }
     return true;
@@ -112,15 +110,15 @@ int EDBInterface::flash(const flashImg& item) {
     size_t rbcnt;
     reset(EDB_MODE_TEXT);
     if (!ping()) {
-        cout << "Device not responding." << endl;
+        EDB_LOG_ERROR("EDB", "Device is not responding.");
         return false;
     }
     wrStr("RESETDBUF\n");
     if (!waitStr((char*)"READY\n")) {
-        cout << "Device not responding." << endl;
+        EDB_LOG_ERROR("EDB", "Device is not ready after buffer reset.");
         return false;
     }
-    cout << "Writing: " << item.filename << "..." << endl;
+    EDB_LOG_INFO("EDB", "Writing " << item.filename << "...");
     fseek(item.f.get(), 0, SEEK_END);
     size_t fsize = ftell(item.f.get());
     uint8_t chksum;
@@ -145,46 +143,50 @@ int EDBInterface::flash(const flashImg& item) {
         rdDat(cmdbuf, 10, &rbcnt);
         sscanf(cmdbuf, "CHKSUM:%02x\n", &rcshkdum);
         if (rcshkdum != chksum) {
-            printf("chksum error: expecting %02x, got %02x instead\n",
-                   chksum, rcshkdum);
+                 EDB_LOG_ERROR("EDB", "Checksum error: expected " << std::hex
+                                            << static_cast<int>(chksum)
+                                            << ", got " << rcshkdum);
             return false;
         }
         if (block_cnt != last_block && !eraseBlock(block_cnt)) {
-            printf("Erase Block Time Out: %d\n", block_cnt);
+            EDB_LOG_ERROR("EDB", "Erase block timed out: " << block_cnt);
             return false;
         }
         snprintf(cmdbuf, sizeof(cmdbuf), "PROGP:%d,%d\n", page_cnt,
                  item.bootImg ? 1 : 0);
         wrStr(cmdbuf);
         if (!waitStr((char*)"PGOK\n")) {
-            printf("Program page timed out: %d\n", page_cnt);
+            EDB_LOG_ERROR("EDB", "Program page timed out: " << page_cnt);
             return false;
         }
         if (page_cnt % 200 == 0) {
             const long long elapsed = getTime() - st;
             const long long speed = elapsed > 0 ? BIN_BLOB_SIZE / elapsed : 0;
-            cout << "Upload: " << ftell(item.f.get()) << "/" << fsize;
-            cout << " Page: " << page_cnt << " Block: " << block_cnt;
-            printf("  chksum: %02x==%02x, %lld KB/s", chksum, rcshkdum, speed);
+            std::ostringstream progress;
+            progress << "Upload " << ftell(item.f.get()) << "/" << fsize
+                     << " bytes | page " << page_cnt << " | block " << block_cnt
+                     << " | checksum " << std::hex << static_cast<int>(chksum)
+                     << "==" << rcshkdum << std::dec << " | " << speed << " KB/s";
             if (speed > 0) {
-                cout << "  " << (fsize - ftell(item.f.get())) / speed / 1000;
+                progress << " | " << (fsize - ftell(item.f.get())) / speed / 1000
+                         << " s remaining";
             } else {
-                cout << "  ?";
+                progress << " | remaining unknown";
             }
-            cout << "s remaining        \r";
-            fflush(stdout);
+            edb_log::Logger::progress(progress.str());
         }
         page_cnt += BIN_BLOB_SIZE / 2048;
         last_block = block_cnt;
     } while (cnt > 0);
 
+    edb_log::Logger::endProgress();
     if (item.bootImg) {
-        cout << "\nSetting NCB..." << endl;
+        EDB_LOG_INFO("EDB", "Setting NCB...");
         snprintf(cmdbuf, sizeof(cmdbuf), "MKNCB: %d, %zu\n",
                  item.toPage / 64, fsize / 2048);
         wrStr(cmdbuf);
         if (!waitStr((char*)"MKOK\n")) {
-            printf("Setting NCB page timed out: %d\n", item.toPage / 64);
+            EDB_LOG_ERROR("EDB", "Setting NCB page timed out: " << item.toPage / 64);
             return false;
         }
     }
@@ -241,7 +243,7 @@ int EDBInterface::open(bool useMassStorage) {
     wrBuf = alignedBuffer(512, wrBufSize);
     sendBuf = alignedBuffer(512, BIN_BLOB_SIZE);
     if (!wrBuf || !sendBuf) {
-        cerr << "Unable to allocate aligned I/O buffers." << endl;
+        EDB_LOG_ERROR("EDB", "Unable to allocate aligned I/O buffers.");
         close();
         return -1;
     }
