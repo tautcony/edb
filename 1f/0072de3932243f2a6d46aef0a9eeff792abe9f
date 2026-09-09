@@ -1,0 +1,158 @@
+scripts/build.sh
+  s_be600be7fda97c::t_d34ced60216de1 1-9
+edb/EDBInterface.cpp
+  s_537a3d4a04fd23::t_696535d6ec2e76 95-115,152-156
+  s_537a3d4a04fd23::t_d2c868a9319f41 14-79,123-128,199-203
+  s_537a3d4a04fd23::t_4293cab6d5991d 13
+  s_537a3d4a04fd23::t_89d393df1c60a7 80-82,92-94
+  s_537a3d4a04fd23::t_24ff2092db840f 116-118,120-122
+  s_537a3d4a04fd23::t_b40bc4344d16d7 129-131,149-151
+  s_537a3d4a04fd23::t_af09df10b76e32 157-159,196-198
+  s_537a3d4a04fd23::t_21b459446bb308 204-206
+  s_537a3d4a04fd23::t_1ee16d6f0322f6 2,4-6,9,11,83-91,119,132-148,160-195,207-232
+edb/WinReg.cpp
+  h_3705811fa4502c 33
+  s_537a3d4a04fd23::t_1b9f1aef2bcecb 3,6,15-18,22-26,39-44,47,49,51-52,54,56-63,65,70,75-80,86-92,94-95,98-99,101-102,106,110-122,126-127
+  s_537a3d4a04fd23::t_25ac1b40938542 9-10,13-14,19-21,27-32,34,37-38,45-46,48,50,53,55,64,66-69,73-74,81-85,93,96-97,100,103-105,109,123-125
+edb/edb.vcxproj
+  s_be600be7fda97c::t_b94943e3361d75 24,30,161
+  s_537a3d4a04fd23::t_023add18013254 26,31,108,123-125,136-138,153-155
+  s_537a3d4a04fd23::t_d2d8f58c490af9 21-22
+  s_be600be7fda97c::t_aa744e31c4ada3 29
+  s_537a3d4a04fd23::t_acabb549fd4142 23,25
+.clang-format
+  h_3705811fa4502c 1-73
+.gitignore
+  h_3705811fa4502c 1-48
+scripts/clang-format-check.sh
+  s_9a30998852601b::t_3f7a10f2fe581d 1-26
+edb/WinReg.h
+  s_537a3d4a04fd23::t_25ac1b40938542 2,5,7,10
+README.md
+  s_537a3d4a04fd23::t_a1c838bdc51a5b 1-145
+edb/edb.vcxproj.filters
+  s_537a3d4a04fd23::t_023add18013254 18,24
+  s_be600be7fda97c::t_b94943e3361d75 1,4,6,8-10,15-17,22-23,26
+  s_537a3d4a04fd23::t_d2d8f58c490af9 14,21
+edb/main.cpp
+  s_537a3d4a04fd23::t_696535d6ec2e76 29-31,33-77
+  s_537a3d4a04fd23::t_a6d817d58476e6 26-28
+  s_537a3d4a04fd23::t_27e8777c6293bb 78-80
+  s_537a3d4a04fd23::t_c3dcb22a971892 2-6,14-22,25,81-150
+scripts/package.sh
+  s_be600be7fda97c::t_d34ced60216de1 1-36
+.github/workflows/build.yml
+  s_9a30998852601b::t_9ea389653efda8 14-31,49-51,60,78,81
+  s_9a30998852601b::t_06a58a205f82b0 11-13
+  s_9a30998852601b::t_8b8ebcef153a0e 32-34,46-48
+  s_9a30998852601b::t_5c49dd56019b1b 52-54,57-59
+  s_9a30998852601b::t_2164d5fe6f5e6d 61-63,75-77
+  s_9a30998852601b::t_a3cb3958343043 79-80
+  s_9a30998852601b::t_3b1fe7233ccb65 82-84
+  h_3705811fa4502c 1-10,35-45,55-56,64-74,85-92
+edb/CComHelper.h
+  s_9a30998852601b::t_ce6536e5bb9224 13,23-25
+  s_537a3d4a04fd23::t_d2d8f58c490af9 15
+  s_537a3d4a04fd23::t_696535d6ec2e76 18-21
+  s_9a30998852601b::t_638cc743031306 26-31
+CMakeLists.txt
+  s_537a3d4a04fd23::t_d2d8f58c490af9 36
+  s_537a3d4a04fd23::t_023add18013254 1-35,37-45
+edb/EDBInterface.h
+  s_537a3d4a04fd23::t_d2c868a9319f41 18-22,24-25,46-47
+  s_537a3d4a04fd23::t_f41d6867efae71 6
+  s_537a3d4a04fd23::t_6c0699ba90a532 37-39
+  s_537a3d4a04fd23::t_696535d6ec2e76 27-36,64
+  s_537a3d4a04fd23::t_a4c02062037416 3-5
+  s_537a3d4a04fd23::t_d1c44ebd22d3fb 7-9,15-17
+  s_537a3d4a04fd23::t_626ce2e1775eba 26
+  s_537a3d4a04fd23::t_3dcea82a17fdde 40-42
+  s_537a3d4a04fd23::t_5ebe7f98e7dd4b 44-45
+  s_537a3d4a04fd23::t_86162ec2411b66 48
+  s_537a3d4a04fd23::t_361b5ac4d69be8 61-63
+  s_537a3d4a04fd23::t_ea95f36c8c492d 65-67
+  s_537a3d4a04fd23::t_51a9b66b63e4a4 10-14,51-60,68-73
+edb/EDBTransportWindows.cpp
+  s_537a3d4a04fd23::t_638f7aeba8a2f4 101-136,173,185,189,193,197,201
+  s_537a3d4a04fd23::t_c49462267f4924 7-8
+  s_537a3d4a04fd23::t_4c870dff651902 1,3-6,9-23,25,37-38,43,53-54,56-57,75-82,87-88,93,96-97,99,156,161-162,166-171,174-175,180,184,186-187,190-192,194-196,198-200,202-203,205-208
+  s_537a3d4a04fd23::t_fd77b9ff81627c 2,67,150-153
+  s_537a3d4a04fd23::t_78121287bcf266 24
+  s_537a3d4a04fd23::t_a23e0c721e6f64 26-28,34-36
+  s_537a3d4a04fd23::t_4625535a7adde2 39-42
+  s_537a3d4a04fd23::t_d90b091db30789 44-46,50-52
+  s_537a3d4a04fd23::t_20878c9aafaa09 55
+  s_537a3d4a04fd23::t_2b19f69aaab1d6 58-60,64-66
+  s_537a3d4a04fd23::t_03ab646e00b4c2 68-70,72-74
+  s_537a3d4a04fd23::t_bda6be3a0fa04e 83-86
+  s_537a3d4a04fd23::t_6e17242c381cd9 89-92
+  s_537a3d4a04fd23::t_455ee983787bcc 94-95
+  s_537a3d4a04fd23::t_7192cf94c61cae 98
+  s_537a3d4a04fd23::t_2d854ba90da18e 100
+  s_537a3d4a04fd23::t_f85b20c7421689 137-139,147-149
+  s_537a3d4a04fd23::t_18837b44b47633 154-155
+  s_537a3d4a04fd23::t_dc84e59ca004a3 157-160
+  s_537a3d4a04fd23::t_0bef1cb2f77042 163-165
+  s_537a3d4a04fd23::t_723f62597fe573 172
+  s_537a3d4a04fd23::t_ef35e0d45191f8 176-179
+  s_537a3d4a04fd23::t_1e435ce6312c06 181-183
+  s_537a3d4a04fd23::t_328c3ad90386db 188
+  s_537a3d4a04fd23::t_fb01b745be6a22 204
+  s_537a3d4a04fd23::t_8398cbeb3c7edd 29-33,47-49,61-63,71,140-146
+edb/CComHelper.cpp
+  h_3705811fa4502c 38,52
+  s_537a3d4a04fd23::t_d2d8f58c490af9 99-102
+  s_9a30998852601b::t_ce6536e5bb9224 8,19,25-27,29,32,36,43-51,58,60-61,64-74,77-78,81-86,89-94,97-98
+  s_537a3d4a04fd23::t_696535d6ec2e76 9-12,14,16,20-23,33,103
+  s_537a3d4a04fd23::t_34de068e7a0024 13,15
+  s_537a3d4a04fd23::t_e5c11894adf994 37,39-42,53-56
+LICENSE
+  h_3705811fa4502c 1-674
+edb/EDBSerialPosix.cpp
+  h_3705811fa4502c 1-101
+edb/EDBSerialPosix.h
+  h_3705811fa4502c 1-16
+edb/EDBTransport.h
+  h_3705811fa4502c 1-23
+edb/EDBTransportMac.cpp
+  h_3705811fa4502c 1-316
+edb/EDBTransportUnix.cpp
+  h_3705811fa4502c 1-234
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "1f0072de3932243f2a6d46aef0a9eeff792abe9f",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_537a3d4a04fd23": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0866a-80f6-7d83-8cc0-ca6e4f87f5b0",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_9a30998852601b": {
+      "agent_id": {
+        "tool": "github-copilot",
+        "id": "ac2de66c-20a8-4896-9731-ac17b7733a1e",
+        "model": "copilot/grok-4.5"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_be600be7fda97c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08552-626b-7733-8423-97c5df99b8a2",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
