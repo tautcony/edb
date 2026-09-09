@@ -72,13 +72,19 @@ void EDBInterface::reset(bool mode) {
     transport->reset(mode == EDB_MODE_BIN);
 }
 
-void EDBInterface::wrStr(const char* str) {
+bool EDBInterface::wrStr(const char* str) {
     if (!str) {
-        return;
+        return false;
+    }
+    const size_t length = strlen(str);
+    if (length >= wrBufSize) {
+        EDB_LOG_ERROR("EDB", "Command is too long.");
+        return false;
     }
     memset(wrBuf.get(), 0, wrBufSize);
-    strcpy(wrBuf.get(), str);
-    transport->writeCommand(wrBuf.get(), wrBufSize);
+    memcpy(wrBuf.get(), str, length);
+    return transport->writeCommand(wrBuf.get(), wrBufSize) ==
+           static_cast<std::ptrdiff_t>(wrBufSize);
 }
 
 bool EDBInterface::wrDat(char* dat, size_t len) {
@@ -86,17 +92,27 @@ bool EDBInterface::wrDat(char* dat, size_t len) {
 }
 
 bool EDBInterface::rdDat(char* dat, size_t len, size_t* rbcnt) {
+    if (!dat || !rbcnt || len > wrBufSize) {
+        return false;
+    }
     memset(wrBuf.get(), 0, wrBufSize);
     const std::ptrdiff_t ret = transport->readCommand(wrBuf.get(), wrBufSize);
-    memcpy(dat, wrBuf.get(), len);
-    *rbcnt = len;
-    return ret > 0;
+    if (ret <= 0) {
+        *rbcnt = 0;
+        return false;
+    }
+    const size_t bytesRead = static_cast<size_t>(ret);
+    *rbcnt = bytesRead < len ? bytesRead : len;
+    memcpy(dat, wrBuf.get(), *rbcnt);
+    return bytesRead >= len;
 }
 
 bool EDBInterface::eraseBlock(unsigned int block) {
     char cmdbuf[64];
     snprintf(cmdbuf, sizeof(cmdbuf), "ERASEB:%d\n", block);
-    wrStr(cmdbuf);
+    if (!wrStr(cmdbuf)) {
+        return false;
+    }
     if (!waitStr((char*)"EROK\n")) {
         EDB_LOG_ERROR("EDB", "Erase block timed out: " << block);
         return false;
@@ -113,35 +129,63 @@ int EDBInterface::flash(const flashImg& item) {
         EDB_LOG_ERROR("EDB", "Device is not responding.");
         return false;
     }
-    wrStr("RESETDBUF\n");
+    if (!wrStr("RESETDBUF\n")) {
+        EDB_LOG_ERROR("EDB", "Unable to reset device buffer.");
+        return false;
+    }
     if (!waitStr((char*)"READY\n")) {
         EDB_LOG_ERROR("EDB", "Device is not ready after buffer reset.");
         return false;
     }
     EDB_LOG_INFO("EDB", "Writing " << item.filename << "...");
-    fseek(item.f.get(), 0, SEEK_END);
-    size_t fsize = ftell(item.f.get());
+    if (fseek(item.f.get(), 0, SEEK_END) != 0) {
+        EDB_LOG_ERROR("EDB", "Unable to seek firmware file.");
+        return false;
+    }
+    const long fileSize = ftell(item.f.get());
+    if (fileSize < 0) {
+        EDB_LOG_ERROR("EDB", "Unable to determine firmware file size.");
+        return false;
+    }
+    rewind(item.f.get());
+    if (ferror(item.f.get())) {
+        EDB_LOG_ERROR("EDB", "Unable to rewind firmware file.");
+        return false;
+    }
+    const size_t fsize = static_cast<size_t>(fileSize);
     uint8_t chksum;
-    uint32_t rcshkdum;
+    unsigned int rcshkdum;
     long long st;
     rewind(item.f.get());
 
     uint32_t page_cnt = item.toPage;
     uint32_t block_cnt = page_cnt / 64;
     uint32_t last_block = 0;
-    do {
+    while (true) {
         block_cnt = page_cnt / 64;
         st = getTime();
         memset(sendBuf.get(), 0xFF, BIN_BLOB_SIZE);
         memset(cmdbuf, 0, sizeof(cmdbuf));
         cnt = fread(sendBuf.get(), 1, BIN_BLOB_SIZE, item.f.get());
+        if (cnt == 0) {
+            if (ferror(item.f.get())) {
+                EDB_LOG_ERROR("EDB", "Unable to read firmware file.");
+                return false;
+            }
+            break;
+        }
         chksum = blockChksum(sendBuf.get(), BIN_BLOB_SIZE);
         reset(EDB_MODE_BIN);
-        wrDat(sendBuf.get(), BIN_BLOB_SIZE);
+        if (!wrDat(sendBuf.get(), BIN_BLOB_SIZE)) {
+            EDB_LOG_ERROR("EDB", "Unable to write firmware block.");
+            return false;
+        }
         reset(EDB_MODE_TEXT);
-        wrStr("BUFCHK\n");
-        rdDat(cmdbuf, 10, &rbcnt);
-        sscanf(cmdbuf, "CHKSUM:%02x\n", &rcshkdum);
+        if (!wrStr("BUFCHK\n") || !rdDat(cmdbuf, 10, &rbcnt) ||
+            sscanf(cmdbuf, "CHKSUM:%02x\n", &rcshkdum) != 1) {
+            EDB_LOG_ERROR("EDB", "Unable to read device checksum.");
+            return false;
+        }
         if (rcshkdum != chksum) {
                  EDB_LOG_ERROR("EDB", "Checksum error: expected " << std::hex
                                             << static_cast<int>(chksum)
@@ -154,7 +198,9 @@ int EDBInterface::flash(const flashImg& item) {
         }
         snprintf(cmdbuf, sizeof(cmdbuf), "PROGP:%d,%d\n", page_cnt,
                  item.bootImg ? 1 : 0);
-        wrStr(cmdbuf);
+        if (!wrStr(cmdbuf)) {
+            return false;
+        }
         if (!waitStr((char*)"PGOK\n")) {
             EDB_LOG_ERROR("EDB", "Program page timed out: " << page_cnt);
             return false;
@@ -177,14 +223,16 @@ int EDBInterface::flash(const flashImg& item) {
         }
         page_cnt += BIN_BLOB_SIZE / 2048;
         last_block = block_cnt;
-    } while (cnt > 0);
+    }
 
     edb_log::Logger::endProgress();
     if (item.bootImg) {
         EDB_LOG_INFO("EDB", "Setting NCB...");
         snprintf(cmdbuf, sizeof(cmdbuf), "MKNCB: %d, %zu\n",
                  item.toPage / 64, fsize / 2048);
-        wrStr(cmdbuf);
+        if (!wrStr(cmdbuf)) {
+            return false;
+        }
         if (!waitStr((char*)"MKOK\n")) {
             EDB_LOG_ERROR("EDB", "Setting NCB page timed out: " << item.toPage / 64);
             return false;
@@ -193,20 +241,20 @@ int EDBInterface::flash(const flashImg& item) {
     return true;
 }
 
-void EDBInterface::reboot() {
-    wrStr("REBOOT\n");
+bool EDBInterface::reboot() {
+    return wrStr("REBOOT\n");
 }
-void EDBInterface::vm_suspend() {
-    wrStr("VMSUSPEND\n");
+bool EDBInterface::vm_suspend() {
+    return wrStr("VMSUSPEND\n");
 }
-void EDBInterface::vm_resume() {
-    wrStr("VMRESUME\n");
+bool EDBInterface::vm_resume() {
+    return wrStr("VMRESUME\n");
 }
-void EDBInterface::vm_reset() {
-    wrStr("VMRESET\n");
+bool EDBInterface::vm_reset() {
+    return wrStr("VMRESET\n");
 }
-void EDBInterface::mscmode() {
-    wrStr("MSCDATA\n");
+bool EDBInterface::mscmode() {
+    return wrStr("MSCDATA\n");
 }
 
 bool EDBInterface::ping() {
@@ -214,7 +262,9 @@ bool EDBInterface::ping() {
     while (retry) {
         memset(wrBuf.get(), 0, wrBufSize);
         reset(EDB_MODE_TEXT);
-        wrStr("PING\n");
+        if (!wrStr("PING\n")) {
+            return false;
+        }
         if (transport->readCommand(wrBuf.get(), wrBufSize) > 0 &&
             strcmp(wrBuf.get(), "PONG\n") == 0) {
             return true;

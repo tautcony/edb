@@ -33,8 +33,10 @@ CComHelper::~CComHelper() {
     Close();
 }
 
-void CComHelper::Set() {
-    SetupComm(hCom, 500, 500);
+bool CComHelper::Set() {
+    if (!SetupComm(hCom, 500, 500)) {
+        return false;
+    }
     COMMTIMEOUTS TimeOuts; //设定读超时
     TimeOuts.ReadIntervalTimeout = MAXDWORD;
     TimeOuts.ReadTotalTimeoutMultiplier = 100;
@@ -42,17 +44,24 @@ void CComHelper::Set() {
 
     TimeOuts.WriteTotalTimeoutConstant = 10; //设定写超时
     TimeOuts.WriteTotalTimeoutMultiplier = 100;
-    SetCommTimeouts(hCom, &TimeOuts);
+    if (!SetCommTimeouts(hCom, &TimeOuts)) {
+        return false;
+    }
 
-    DCB dcb;
-    GetCommState(hCom, &dcb);
+    DCB dcb = {};
+    dcb.DCBlength = sizeof(dcb);
+    if (!GetCommState(hCom, &dcb)) {
+        return false;
+    }
     dcb.BaudRate = 115200;
     dcb.ByteSize = 8;           //每个字节有8位
     dcb.Parity = NOPARITY;      //无奇偶校验位
     dcb.StopBits = TWOSTOPBITS; //两个停止位
-    SetCommState(hCom, &dcb);
+    if (!SetCommState(hCom, &dcb)) {
+        return false;
+    }
 
-    PurgeComm(hCom, PURGE_TXCLEAR | PURGE_RXCLEAR);
+    return PurgeComm(hCom, PURGE_TXCLEAR | PURGE_RXCLEAR) != FALSE;
 }
 
 bool CComHelper::Read(char* data, int length, DWORD* dwCount) {
@@ -67,7 +76,7 @@ bool CComHelper::Write(char* data, int length) {
     DWORD dwError;
     ClearCommError(hCom, &dwError, &ComStat);
     bool bWriteStat = WriteFile(hCom, data, dwWrite, &dwWrite, NULL);
-    if (!bWriteStat) {
+    if (!bWriteStat || dwWrite != static_cast<DWORD>(length)) {
         return false;
     }
     PurgeComm(hCom, PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR);

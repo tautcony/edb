@@ -16,6 +16,7 @@
 std::vector<flashImg> imglist;
 
 EDBInterface edb;
+volatile sig_atomic_t interruptRequested = 0;
 
 void showUsage() {
     std::cout << "Usage: edb [options]\n\n"
@@ -49,18 +50,16 @@ bool parsePage(const char* text, uint32_t* page) {
 
 void handleInterrupt(int id) {
     (void)id;
-    EDB_LOG_WARN("CLI", "Interrupted by user.");
-    edb.close();
-    imglist.clear();
-    exit(-1);
+    interruptRequested = 1;
 }
 
 int main(int argc, char* argv[]) {
 #ifdef _WIN32
     signal(SIGINT, handleInterrupt);
 #else
-    struct sigaction sigHandler;
+    struct sigaction sigHandler = {};
     sigHandler.sa_handler = handleInterrupt;
+    sigemptyset(&sigHandler.sa_mask);
     sigaction(SIGINT, &sigHandler, NULL);
 #endif
 
@@ -179,6 +178,12 @@ int main(int argc, char* argv[]) {
     }
     EDB_LOG_INFO("CLI", "Device responded with PONG.");
 
+    if (interruptRequested) {
+        EDB_LOG_WARN("CLI", "Interrupted by user.");
+        edb.close();
+        return 130;
+    }
+
     if (checkOnly) {
         EDB_LOG_INFO("CLI", "PASS: device connection and transport access check passed.");
         edb.close();
@@ -186,22 +191,40 @@ int main(int argc, char* argv[]) {
     }
 
     if (mscmode) {
-        edb.vm_suspend();
-        edb.mscmode();
+        if (!edb.vm_suspend() || !edb.mscmode()) {
+            EDB_LOG_ERROR("CLI", "Unable to enter mass-storage mode.");
+            edb.close();
+            return 11;
+        }
     }
 
-    edb.vm_suspend();
+    bool flashSucceeded = edb.vm_suspend();
+    if (!flashSucceeded) {
+        EDB_LOG_ERROR("CLI", "Unable to suspend the device VM.");
+    }
     for (flashImg& item : imglist) {
-        edb.flash(item);
+        if (!flashSucceeded || interruptRequested) {
+            flashSucceeded = false;
+            break;
+        }
+        if (edb.flash(item) != 0) {
+            flashSucceeded = false;
+            break;
+        }
     }
     // edb.vm_reset();
     // edb.vm_resume();
 
-    if (reboot) {
-        edb.reboot();
+    if (flashSucceeded && reboot && !edb.reboot()) {
+        EDB_LOG_ERROR("CLI", "Unable to reboot the device.");
+        flashSucceeded = false;
     }
 
     edb.close();
 
-    return 0;
+    if (interruptRequested) {
+        EDB_LOG_WARN("CLI", "Interrupted by user.");
+        return 130;
+    }
+    return flashSucceeded ? 0 : 11;
 }

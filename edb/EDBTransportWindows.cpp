@@ -157,7 +157,11 @@ namespace {
                     EDB_LOG_ERROR("Transport", "Unable to open serial port: " << port);
                     return -1;
                 }
-                com.Set();
+                if (!com.Set()) {
+                    EDB_LOG_ERROR("Transport", "Unable to configure serial port.");
+                    com.Close();
+                    return -1;
+                }
                 serialMode = true;
                 EDB_LOG_INFO("Transport", "Serial port configured: 115200 baud, 8N2.");
                 return 0;

@@ -61,16 +61,16 @@ public:
 
     void reset(bool mode);
     bool waitStr(char* str);
-    void wrStr(const char* str);
+    bool wrStr(const char* str);
     bool wrDat(char* dat, size_t len);
     bool rdDat(char* dat, size_t len, size_t* rbcnt);
     bool eraseBlock(unsigned int block);
     int flash(const flashImg& item);
-    void reboot();
-    void vm_suspend();
-    void vm_resume();
-    void vm_reset();
-    void mscmode();
+    bool reboot();
+    bool vm_suspend();
+    bool vm_resume();
+    bool vm_reset();
+    bool mscmode();
     bool ping();
     void close();
     void setSerialPort(const char* path);
