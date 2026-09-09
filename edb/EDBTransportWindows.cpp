@@ -163,10 +163,23 @@ namespace {
                 return 0;
             }
 
-            EDB_LOG_INFO("Transport", "Searching for ExistOS mass storage volume...");
-            const std::wstring root = findMassStorageRoot();
+            const int maxAttempts = 3;
+            std::wstring root;
+            for (int attempt = 1; attempt <= maxAttempts; ++attempt) {
+                EDB_LOG_INFO("Transport", "Searching for ExistOS mass storage volume (attempt "
+                                             << attempt << "/" << maxAttempts << ")...");
+                root = findMassStorageRoot();
+                if (!root.empty()) {
+                    break;
+                }
+                if (attempt < maxAttempts) {
+                    EDB_LOG_WARN("Transport", "Mass storage volume not found; retrying in 2 seconds.");
+                    Sleep(2000);
+                }
+            }
             if (root.empty()) {
-                EDB_LOG_ERROR("Transport", "No ExistOS mass storage volume found.");
+                EDB_LOG_ERROR("Transport", "No ExistOS mass storage volume found after "
+                                             << maxAttempts << " attempts.");
                 return -1;
             }
             EDB_LOG_INFO("Transport", "Identified mass storage volume.");

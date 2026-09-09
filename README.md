@@ -15,13 +15,21 @@ EDB (Embedded Device Bootloader) 是一个用于向嵌入式设备烧录固件�
 EDB 工具支持以下命令行参数：
 
 ```text
--f <bin file> <page> [b] (Specify 'b' to flash as boot image.)
--p <serial port> Use serial transport instead of USB MSC.
---serial       Auto-detect a serial transport.
--s             Use USB MSC transport.
--r             Reboot if all operations are done.
--m             Enter Mass Storage mode.
--c, --check    Check device connection and mount access only.
+Usage: edb [options]
+
+Actions:
+	-f, --file <path> <page> [b]  Flash a binary image; add 'b' for boot image.
+	-m, --msc                    Enter mass-storage mode after connecting.
+	-c, --check                  Check the connection, then exit.
+
+Transport:
+	-s, --mass-storage           Use USB mass storage (default).
+			--serial                 Auto-detect a serial transport.
+	-p, --port <path>            Use the specified serial port.
+
+Other:
+	-r, --reboot                 Reboot after all operations complete.
+	-h, --help                  Show this help and exit.
 ```
 
 ## 使用示例

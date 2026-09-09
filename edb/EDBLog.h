@@ -48,9 +48,10 @@ public:
         std::ostream& output = level == LogLevel::Error ? std::cerr : std::cout;
         output << '[' << std::put_time(&localTime, "%Y-%m-%d %H:%M:%S")
                << '.' << std::setfill('0') << std::setw(3) << milliseconds
-               << "] [" << std::left << std::setw(5) << logLevelName(level)
+             << std::setfill(' ') << "] [" << std::left << std::setw(5)
+             << logLevelName(level)
                << std::right << "] [" << component << "] " << message
-               << std::setfill(' ') << std::endl;
+             << std::endl;
     }
 
     static void progress(const std::string& message) {

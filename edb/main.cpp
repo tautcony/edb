@@ -1,5 +1,7 @@
 #include "EDBInterface.h"
 #include "EDBLog.h"
+#include <cerrno>
+#include <climits>
 #include <cstring>
 #include <signal.h>
 #ifdef _WIN32
@@ -7,6 +9,8 @@
 #else
 #include <unistd.h>
 #endif
+#include <cstdlib>
+#include <limits>
 #include <vector>
 
 std::vector<flashImg> imglist;
@@ -14,14 +18,33 @@ std::vector<flashImg> imglist;
 EDBInterface edb;
 
 void showUsage() {
-    std::cout << "Usage:" << std::endl;
-    std::cout << "\t-f <bin file> <page> [b] (Specify 'b' to flash as boot image.)" << std::endl;
-    std::cout << "\t-p <serial port> Use serial transport instead of USB MSC." << std::endl;
-    std::cout << "\t--serial       Auto-detect a serial transport." << std::endl;
-    std::cout << "\t-s             Use USB MSC transport." << std::endl;
-    std::cout << "\t-r Reboot if all operations are done." << std::endl;
-    std::cout << "\t-m Enter Mass Storage mode." << std::endl;
-    std::cout << "\t-c, --check Check device connection and mount access only." << std::endl;
+    std::cout << "Usage: edb [options]\n\n"
+              << "Actions:\n"
+              << "  -f, --file <path> <page> [b]  Flash a binary image; add 'b' for boot image.\n"
+              << "  -m, --msc                    Enter mass-storage mode after connecting.\n"
+              << "  -c, --check                  Check the connection, then exit.\n\n"
+              << "Transport:\n"
+              << "  -s, --mass-storage           Use USB mass storage (default).\n"
+              << "      --serial                 Auto-detect a serial transport.\n"
+              << "  -p, --port <path>            Use the specified serial port.\n\n"
+              << "Other:\n"
+              << "  -r, --reboot                 Reboot after all operations complete.\n"
+              << "  -h, --help                  Show this help and exit.\n";
+}
+
+bool parsePage(const char* text, uint32_t* page) {
+    if (!text || !*text || text[0] == '-') {
+        return false;
+    }
+    errno = 0;
+    char* end = nullptr;
+    const unsigned long value = std::strtoul(text, &end, 10);
+    if (errno == ERANGE || *end != '\0' ||
+        value > (std::numeric_limits<uint32_t>::max)()) {
+        return false;
+    }
+    *page = static_cast<uint32_t>(value);
+    return true;
 }
 
 void handleInterrupt(int id) {
@@ -45,11 +68,12 @@ int main(int argc, char* argv[]) {
     bool mscmode = false;
     bool checkOnly = false;
     bool useMassStorage = true;
+    bool transportSelected = false;
     const char* serialPath = nullptr;
 
     if (argc < 2) {
         showUsage();
-        return -1;
+        return 1;
     }
 
     // if (geteuid() != 0) {
@@ -58,20 +82,29 @@ int main(int argc, char* argv[]) {
     // }
 
     for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-f") == 0) {
+        const char* argument = argv[i];
+        if (strcmp(argument, "-h") == 0 || strcmp(argument, "--help") == 0) {
+            showUsage();
+            return 0;
+        } else if (strcmp(argument, "-f") == 0 ||
+                   strcmp(argument, "--file") == 0) {
             if (i + 2 >= argc) {
+                EDB_LOG_ERROR("CLI", "Option " << argument
+                                                 << " requires <path> and <page>.");
                 showUsage();
-                return -1;
+                return 2;
             }
             flashImg item;
-            // printf("Open: %s\n", argv[i + 1]);
+            if (!parsePage(argv[i + 2], &item.toPage)) {
+                EDB_LOG_ERROR("CLI", "Invalid flash page: " << argv[i + 2]);
+                return 2;
+            }
             item.f.reset(fopen(argv[i + 1], "rb"));
             if (!item.f) {
                 EDB_LOG_ERROR("CLI", "Unable to open firmware file: " << argv[i + 1]);
-                return -1;
+                return 2;
             }
             item.filename = argv[i + 1];
-            item.toPage = atoi(argv[i + 2]);
             if (i + 3 < argc) {
                 if (strcmp(argv[i + 3], "b") == 0) {
                     EDB_LOG_INFO("CLI", "Firmware will be written as boot image.");
@@ -82,52 +115,65 @@ int main(int argc, char* argv[]) {
             EDB_LOG_INFO("CLI", "Firmware target page: " << item.toPage);
             imglist.push_back(std::move(item));
             i += 2;
-        }
-
-        if (strcmp(argv[i], "-r") == 0) {
+        } else if (strcmp(argument, "-r") == 0 ||
+                   strcmp(argument, "--reboot") == 0) {
             reboot = true;
-        }
-
-        if (strcmp(argv[i], "-m") == 0) {
+        } else if (strcmp(argument, "-m") == 0 ||
+                   strcmp(argument, "--msc") == 0) {
             mscmode = true;
-        }
-
-        if (strcmp(argv[i], "-s") == 0) {
+        } else if (strcmp(argument, "-s") == 0 ||
+                   strcmp(argument, "--mass-storage") == 0) {
+            if (transportSelected && !useMassStorage) {
+                EDB_LOG_ERROR("CLI", "Options --mass-storage and serial transport cannot be combined.");
+                return 2;
+            }
             useMassStorage = true;
-        }
-
-        if (strcmp(argv[i], "--serial") == 0) {
+            transportSelected = true;
+        } else if (strcmp(argument, "--serial") == 0) {
+            if (transportSelected && useMassStorage) {
+                EDB_LOG_ERROR("CLI", "Options --serial and --mass-storage cannot be combined.");
+                return 2;
+            }
             useMassStorage = false;
-        }
-
-        if (strcmp(argv[i], "-p") == 0) {
+            transportSelected = true;
+        } else if (strcmp(argument, "-p") == 0 ||
+                   strcmp(argument, "--port") == 0) {
             if (i + 1 >= argc) {
+                EDB_LOG_ERROR("CLI", "Option " << argument << " requires <path>.");
                 showUsage();
-                return -1;
+                return 2;
+            }
+            if (transportSelected && useMassStorage) {
+                EDB_LOG_ERROR("CLI", "Options --port and --mass-storage cannot be combined.");
+                return 2;
             }
             useMassStorage = false;
             serialPath = argv[++i];
-        }
-
-        if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--check") == 0) {
+            transportSelected = true;
+        } else if (strcmp(argument, "-c") == 0 ||
+                   strcmp(argument, "--check") == 0) {
             checkOnly = true;
+        } else {
+            EDB_LOG_ERROR("CLI", "Unknown option: " << argument);
+            showUsage();
+            return 2;
         }
     }
 
     if (serialPath) {
         edb.setSerialPort(serialPath);
     }
-    EDB_LOG_INFO("CLI", "[1/3] Opening " << (useMassStorage ? "USB mass storage" : "serial transport") << "...");
+    EDB_LOG_INFO("CLI", "Opening " << (useMassStorage ? "USB mass storage" : "serial transport") << "...");
     if (edb.open(useMassStorage)) {
-        EDB_LOG_ERROR("CLI", "[1/3] Unable to open the selected transport.");
+        EDB_LOG_ERROR("CLI", "Unable to open the selected transport.");
         edb.close();
         return -1;
     }
-    EDB_LOG_INFO("CLI", "[2/3] Transport opened.");
+    EDB_LOG_INFO("CLI", "Transport opened.");
 
-    EDB_LOG_INFO("CLI", "[3/3] Sending PING and waiting for PONG...");
+    EDB_LOG_INFO("CLI", "Sending PING and waiting for PONG...");
     if (edb.ping() == false) {
-        EDB_LOG_ERROR("CLI", "[3/3] Device did not respond to PING.");
+        EDB_LOG_ERROR("CLI", "Device did not respond to PING.");
         edb.close();
         return 10;
     }
