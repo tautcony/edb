@@ -58,9 +58,6 @@ MaxEmptyLinesToKeep: 1
 # 注释
 ReflowComments: false
 
-# 枚举
-EnumTrailingComma: Remove
-
 # include
 SortIncludes: false
 IncludeBlocks: Preserve
