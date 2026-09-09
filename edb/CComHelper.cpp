@@ -5,111 +5,100 @@
 #include <vector>
 using namespace std;
 
-LPCWSTR stringToLPCWSTR(std::string orig)
-{
-	size_t origsize = orig.length() + 1;
-	size_t convertedChars = 0;
-	wchar_t* wcstring = (wchar_t*)malloc(sizeof(wchar_t) * (orig.length() - 1));
-	mbstowcs_s(&convertedChars, wcstring, origsize, orig.c_str(), _TRUNCATE);
-	
-	return wcstring;
+std::wstring stringToWString(const std::string& orig) {
+    int length = MultiByteToWideChar(CP_ACP, 0, orig.c_str(), -1, NULL, 0);
+    if (length <= 0) {
+        return std::wstring();
+    }
+    std::wstring result(length, L'\0');
+    MultiByteToWideChar(CP_ACP, 0, orig.c_str(), -1, &result[0], length);
+    result.resize(length - 1);
+    return result;
 }
 
-bool CComHelper::Open(string com)
-{
-	hCom = CreateFile(stringToLPCWSTR(com), GENERIC_WRITE | GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+bool CComHelper::Open(string com) {
+    Close();
+    const std::wstring path = stringToWString(com);
+    hCom = CreateFileW(path.c_str(), GENERIC_WRITE | GENERIC_READ, 0, NULL,
+                       OPEN_EXISTING, 0, NULL);
 
-	if (hCom == (HANDLE)-1)
-	{
-		return false;
-	}
+    if (hCom == INVALID_HANDLE_VALUE) {
+        return false;
+    }
 
-	return true;
+    return true;
 }
 
-void CComHelper::Set()
-{
-	SetupComm(hCom, 500, 500);
-	COMMTIMEOUTS TimeOuts; //Éè¶¨¶Á³¬Ê±
-	TimeOuts.ReadIntervalTimeout = MAXDWORD;
-	TimeOuts.ReadTotalTimeoutMultiplier = 100;
-	TimeOuts.ReadTotalTimeoutConstant = 1000;
-
-
-	TimeOuts.WriteTotalTimeoutConstant = 10;//Éè¶¨Ð´³¬Ê±
-	TimeOuts.WriteTotalTimeoutMultiplier = 100;
-	SetCommTimeouts(hCom, &TimeOuts);
-	
-
-	DCB dcb;
-	GetCommState(hCom, &dcb);
-	dcb.BaudRate = 115200; 
-	dcb.ByteSize = 8; //Ã¿¸ö×Ö½ÚÓÐ8Î»
-	dcb.Parity = NOPARITY; //ÎÞÆæÅ¼Ð£ÑéÎ»
-	dcb.StopBits = TWOSTOPBITS; //Á½¸öÍ£Ö¹Î»
-	SetCommState(hCom, &dcb);
-	
-
-	PurgeComm(hCom, PURGE_TXCLEAR | PURGE_RXCLEAR);
-
+CComHelper::~CComHelper() {
+    Close();
 }
 
+void CComHelper::Set() {
+    SetupComm(hCom, 500, 500);
+    COMMTIMEOUTS TimeOuts; //è®¾å®šè¯»è¶…æ—¶
+    TimeOuts.ReadIntervalTimeout = MAXDWORD;
+    TimeOuts.ReadTotalTimeoutMultiplier = 100;
+    TimeOuts.ReadTotalTimeoutConstant = 1000;
 
+    TimeOuts.WriteTotalTimeoutConstant = 10; //è®¾å®šå†™è¶…æ—¶
+    TimeOuts.WriteTotalTimeoutMultiplier = 100;
+    SetCommTimeouts(hCom, &TimeOuts);
 
-bool CComHelper::Read(char* data, int length, DWORD *dwCount)
-{
+    DCB dcb;
+    GetCommState(hCom, &dcb);
+    dcb.BaudRate = 115200;
+    dcb.ByteSize = 8;           //æ¯ä¸ªå­—èŠ‚æœ‰8ä½
+    dcb.Parity = NOPARITY;      //æ— å¥‡å¶æ ¡éªŒä½
+    dcb.StopBits = TWOSTOPBITS; //ä¸¤ä¸ªåœæ­¢ä½
+    SetCommState(hCom, &dcb);
 
-	bool bReadStat = ReadFile(hCom, data, (DWORD)length, dwCount, NULL);
-	return bReadStat;
+    PurgeComm(hCom, PURGE_TXCLEAR | PURGE_RXCLEAR);
 }
 
-bool CComHelper::Write(char* data, int length)
-{
-	DWORD dwWrite = (DWORD)length;
-	COMSTAT ComStat;
-	DWORD  dwError;
-	ClearCommError(hCom, &dwError, &ComStat);
-	bool bWriteStat = WriteFile(hCom, data, dwWrite, &dwWrite, NULL);
-	if (!bWriteStat)
-	{
-		return false;
-	}
-	PurgeComm(hCom, PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR);
-	return true;
+bool CComHelper::Read(char* data, int length, DWORD* dwCount) {
+
+    bool bReadStat = ReadFile(hCom, data, (DWORD)length, dwCount, NULL);
+    return bReadStat;
 }
 
-bool CComHelper::WriteStr(const char* data)
-{
-	return Write((char*)data, strlen(data));
+bool CComHelper::Write(char* data, int length) {
+    DWORD dwWrite = (DWORD)length;
+    COMSTAT ComStat;
+    DWORD dwError;
+    ClearCommError(hCom, &dwError, &ComStat);
+    bool bWriteStat = WriteFile(hCom, data, dwWrite, &dwWrite, NULL);
+    if (!bWriteStat) {
+        return false;
+    }
+    PurgeComm(hCom, PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR);
+    return true;
 }
 
-void CComHelper::SetDTR(bool set)
-{
-	if (set)
-	{
-		EscapeCommFunction(hCom, SETDTR);
-	}
-	else 
-	{
-		EscapeCommFunction(hCom, CLRDTR);
-	}
+bool CComHelper::WriteStr(const char* data) {
+    return Write((char*)data, strlen(data));
 }
 
-void CComHelper::SetRTS(bool set)
-{
-	if (set)
-	{
-		EscapeCommFunction(hCom, SETRTS);
-	}
-	else
-	{
-		EscapeCommFunction(hCom, CLRRTS);
-	}
+void CComHelper::SetDTR(bool set) {
+    if (set) {
+        EscapeCommFunction(hCom, SETDTR);
+    } else {
+        EscapeCommFunction(hCom, CLRDTR);
+    }
 }
 
-bool CComHelper::Close()
-{
-	bool result = CloseHandle(hCom);
-	return result;
+void CComHelper::SetRTS(bool set) {
+    if (set) {
+        EscapeCommFunction(hCom, SETRTS);
+    } else {
+        EscapeCommFunction(hCom, CLRRTS);
+    }
 }
 
+bool CComHelper::Close() {
+    if (hCom == INVALID_HANDLE_VALUE) {
+        return true;
+    }
+    bool result = CloseHandle(hCom);
+    hCom = INVALID_HANDLE_VALUE;
+    return result;
+}

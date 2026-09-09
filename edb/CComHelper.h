@@ -10,20 +10,22 @@
 #include <vector>
 using namespace std;
 
-
-class CComHelper
-{
+class CComHelper {
 private:
-	HANDLE hCom;
+    HANDLE hCom = INVALID_HANDLE_VALUE;
 
 public:
-	bool Open(string com);
-	void Set();
-	bool Read(char* data, int length, DWORD *dwCount);
-	bool Write(char* data, int length);
-	bool WriteStr(const char* data);
-	void SetDTR(bool set);
-	void SetRTS(bool set);
-	bool Close();
-};
+    CComHelper() = default;
+    ~CComHelper();
+    CComHelper(const CComHelper&) = delete;
+    CComHelper& operator=(const CComHelper&) = delete;
 
+    bool Open(string com);
+    void Set();
+    bool Read(char* data, int length, DWORD* dwCount);
+    bool Write(char* data, int length);
+    bool WriteStr(const char* data);
+    void SetDTR(bool set);
+    void SetRTS(bool set);
+    bool Close();
+};

@@ -14,12 +14,14 @@ EDB (Embedded Device Bootloader) 是一个用于向嵌入式设备烧录固件�
 
 EDB 工具支持以下命令行参数：
 
-```
--f <bin file> <page>	指定要烧录的二进制文件和目标页面
--p <serial port>	指定串行端口（可选，不提供则自动选择）
--s			使用USB MSC进行高速通信
--r			操作完成后重启设备
--m			进入MSC模式
+```text
+-f <bin file> <page> [b] (Specify 'b' to flash as boot image.)
+-p <serial port> Use serial transport instead of USB MSC.
+--serial       Auto-detect a serial transport.
+-s             Use USB MSC transport.
+-r             Reboot if all operations are done.
+-m             Enter Mass Storage mode.
+-c, --check    Check device connection and mount access only.
 ```
 
 ## 使用示例
@@ -94,20 +96,22 @@ EDB 工具主要通过以下流程与设备交互：
 ## 项目结构
 
 ```
-edb-main/
-├── edb/
-│   ├── main.cpp			主程序入口
-│   ├── EDBInterface.cpp/h	设备通信接口实现
-│   ├── CComHelper.cpp/h		串口通信辅助类
-│   ├── WinReg.cpp/h		Windows注册表操作
-│   ├── libusb/			libusb库文件
-│   └── edb.vcxproj		Visual Studio项目文件
-├── edb.sln				Visual Studio解决方案文件
-├── Debug/				调试版本输出目录
-└── Release/				发布版本输出目录
+edb/
+├── main.cpp                    主程序入口
+├── EDBInterface.cpp/h          设备通信接口实现
+├── EDBTransport.h              平台传输接口
+├── EDBTransportUnix.cpp        Linux 后端
+├── EDBTransportMac.cpp         macOS 后端
+├── EDBTransportWindows.cpp     Windows 后端
+├── EDBSerialPosix.cpp/h        Posix 串口实现
+├── CComHelper.cpp/h            Windows 串口通信辅助类
+├── WinReg.cpp/h                Windows注册表操作
+└── edb.vcxproj                 Visual Studio工程文件
 ```
 
 ## 编译说明
+
+### Windows
 
 该项目使用Visual Studio进行开发和编译。可以通过以下步骤编译项目：
 
@@ -117,18 +121,25 @@ edb-main/
 
 编译完成后，可执行文件将位于相应的输出目录中。
 
+Windows 后端使用 Windows SDK 提供的 Win32 API，链接系统库 `Advapi32.lib`。
+
+### Linux 和 macOS
+
+项目使用 CMake 构建：
+
+```bash
+./scripts/build.sh
+```
+
 ## 注意事项
 
 - 请确保在烧录前选择正确的目标页面
 - 使用USB MSC模式时，确保设备已正确连接并识别
 - 烧录启动镜像时需要额外添加参数 `b`
-- 操作过程中请勿断开设备连接，以免损坏固件
+- 操作过程中请勿断开设备连接
 
 ## 故障排除
 
 - 如果设备无响应，检查连接并尝试重新执行命令
 - 确保使用的固件文件格式正确且兼容
 - 对于USB连接问题，可以尝试更换USB端口或使用串行端口模式
-
-
-所有内容由Trae生成

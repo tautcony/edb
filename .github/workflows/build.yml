@@ -1,0 +1,92 @@
+name: Build binaries
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  clang-format:
+    name: clang-format
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install clang-format
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang-format
+
+      - name: Check formatting
+        run: ./scripts/clang-format-check.sh
+
+  build:
+    name: ${{ matrix.platform }}-${{ matrix.arch }}
+    needs: clang-format
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            platform: linux
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            platform: linux
+            arch: arm64
+          - runner: macos-14
+            platform: macos
+            arch: arm64
+          - runner: windows-2022
+            platform: windows
+            arch: x86_64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build and package on Unix
+        if: matrix.platform != 'windows'
+        run: ./scripts/package.sh
+
+      - name: Build and package on Windows
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          cmake -S . -B build-windows -A x64 -DCMAKE_BUILD_TYPE=Release
+          cmake --build build-windows --config Release --parallel
+          cmake --install build-windows --config Release --prefix dist/edb-windows-x86_64
+          Compress-Archive -Path dist/edb-windows-x86_64 -DestinationPath dist/edb-windows-x86_64.zip
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: edb-${{ matrix.platform }}-${{ matrix.arch }}
+          path: dist/*.*
+          if-no-files-found: error
+          retention-days: 30
+
+  release:
+    name: Publish release assets
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          pattern: edb-*
+          merge-multiple: true
+
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" release-assets/* --generate-notes

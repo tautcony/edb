@@ -1,0 +1,73 @@
+---
+Language: Cpp
+Standard: Cpp11
+
+BasedOnStyle: LLVM
+
+# 缩进
+IndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ContinuationIndentWidth: 4
+
+# 不限制单行长度
+ColumnLimit: 0
+
+# 访问修饰符
+AccessModifierOffset: -4
+
+# namespace 缩进
+NamespaceIndentation: All
+
+# 大括号
+# 保持 Java 风格：
+# if (...) {
+# } else {
+# while (...) {
+# }
+BreakBeforeBraces: Attach
+
+# 控制语句
+SpaceBeforeParens: ControlStatements
+
+# 指针
+PointerAlignment: Left
+
+# 运算符
+SpaceBeforeAssignmentOperators: true
+
+# 空格
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+SpaceInEmptyParentheses: false
+
+# 函数
+AllowShortFunctionsOnASingleLine: Inline
+AllowShortBlocksOnASingleLine: Never
+
+# if/else
+AllowShortIfStatementsOnASingleLine: WithoutElse
+AllowShortLoopsOnASingleLine: false
+
+# case
+IndentCaseLabels: true
+
+# 空行
+MaxEmptyLinesToKeep: 1
+
+# 注释
+ReflowComments: false
+
+# 枚举
+EnumTrailingComma: Remove
+
+# include
+SortIncludes: false
+IncludeBlocks: Preserve
+
+# 宏
+MacroBlockBegin: ""
+MacroBlockEnd: ""
+
+# namespace
+CompactNamespaces: false
