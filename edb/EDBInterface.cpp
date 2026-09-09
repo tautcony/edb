@@ -183,9 +183,9 @@ int EDBInterface::flash(const flashImg& item) {
             return false;
         }
         if (rcshkdum != chksum) {
-                 EDB_LOG_ERROR("EDB", "Checksum error: expected " << std::hex
-                                            << static_cast<int>(chksum)
-                                            << ", got " << rcshkdum);
+            EDB_LOG_ERROR("EDB", "Checksum error: expected " << std::hex
+                                                             << static_cast<int>(chksum)
+                                                             << ", got " << rcshkdum);
             return false;
         }
         if (block_cnt != last_block && !eraseBlock(block_cnt)) {

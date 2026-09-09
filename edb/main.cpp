@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
                    strcmp(argument, "--file") == 0) {
             if (i + 2 >= argc) {
                 EDB_LOG_ERROR("CLI", "Option " << argument
-                                                 << " requires <path> and <page>.");
+                                               << " requires <path> and <page>.");
                 showUsage();
                 return 2;
             }

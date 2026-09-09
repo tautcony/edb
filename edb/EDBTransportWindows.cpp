@@ -171,7 +171,7 @@ namespace {
             std::wstring root;
             for (int attempt = 1; attempt <= maxAttempts; ++attempt) {
                 EDB_LOG_INFO("Transport", "Searching for ExistOS mass storage volume (attempt "
-                                             << attempt << "/" << maxAttempts << ")...");
+                                              << attempt << "/" << maxAttempts << ")...");
                 root = findMassStorageRoot();
                 if (!root.empty()) {
                     break;
@@ -183,7 +183,7 @@ namespace {
             }
             if (root.empty()) {
                 EDB_LOG_ERROR("Transport", "No ExistOS mass storage volume found after "
-                                             << maxAttempts << " attempts.");
+                                               << maxAttempts << " attempts.");
                 return -1;
             }
             EDB_LOG_INFO("Transport", "Identified mass storage volume.");

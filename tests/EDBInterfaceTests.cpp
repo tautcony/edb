@@ -54,7 +54,31 @@ namespace {
         return std::unique_ptr<EDBInterface>(
             new EDBInterface(std::unique_ptr<EDBTransport>(fake.release())));
     }
-}
+
+    flashImg makeFirmware(const std::vector<char>& data, uint32_t page = 0,
+                          bool bootImage = false) {
+        FILE* file = tmpfile();
+        EXPECT_NE(file, nullptr);
+        if (!file) {
+            return flashImg();
+        }
+        EXPECT_EQ(fwrite(data.data(), 1, data.size(), file), data.size());
+        rewind(file);
+        flashImg image;
+        image.f.reset(file);
+        image.filename = const_cast<char*>("test.bin");
+        image.toPage = page;
+        image.bootImg = bootImage;
+        return image;
+    }
+
+    std::string checksumResponse(const std::vector<char>& data) {
+        char response[32] = {};
+        snprintf(response, sizeof(response), "CHKSUM:%02x\n",
+                 blockChksum(data.data(), data.size()));
+        return response;
+    }
+} // namespace
 
 TEST(EDBInterfaceTest, PingWritesCommandAndAcceptsPong) {
     FakeTransport* transport = nullptr;
@@ -142,4 +166,91 @@ TEST(EDBInterfaceTest, EmptyFirmwareDoesNotWriteADataBlock) {
 
     EXPECT_TRUE(interface->flash(image));
     EXPECT_TRUE(transport->dataWriteSizes.empty());
+}
+
+TEST(EDBInterfaceTest, RejectsNullAndOversizedCommands) {
+    FakeTransport* transport = nullptr;
+    std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
+    ASSERT_EQ(interface->open(false), 0);
+
+    EXPECT_FALSE(interface->wrStr(nullptr));
+    EXPECT_FALSE(interface->wrStr(std::string(512, 'x').c_str()));
+    EXPECT_TRUE(transport->commands.empty());
+}
+
+TEST(EDBInterfaceTest, ReportsTransportOpenFailure) {
+    FakeTransport* transport = nullptr;
+    std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
+    transport->openResult = -1;
+
+    EXPECT_EQ(interface->open(false), -1);
+}
+
+TEST(EDBInterfaceTest, StopsAfterTwoUnexpectedResponses) {
+    FakeTransport* transport = nullptr;
+    std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
+    ASSERT_EQ(interface->open(false), 0);
+    transport->commandResponses = {"NOPE\n", "STILL-NOPE\n"};
+
+    EXPECT_FALSE(interface->waitStr(const_cast<char*>("READY\n")));
+    EXPECT_EQ(transport->resetCount, 2);
+}
+
+TEST(EDBInterfaceTest, StopsWhenDataBlockWriteFails) {
+    FakeTransport* transport = nullptr;
+    std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
+    ASSERT_EQ(interface->open(false), 0);
+    transport->commandResponses = {"PONG\n", "READY\n"};
+    transport->writeDataResult = -1;
+
+    const std::vector<char> block(BIN_BLOB_SIZE, static_cast<char>(0xFF));
+    flashImg image = makeFirmware(block);
+
+    EXPECT_FALSE(interface->flash(image));
+    ASSERT_EQ(transport->dataWriteSizes.size(), 1u);
+}
+
+TEST(EDBInterfaceTest, StopsWhenDeviceChecksumDoesNotMatch) {
+    FakeTransport* transport = nullptr;
+    std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
+    ASSERT_EQ(interface->open(false), 0);
+    transport->commandResponses = {"PONG\n", "READY\n", "CHKSUM:00\n"};
+    transport->writeDataResult = BIN_BLOB_SIZE;
+
+    const std::vector<char> block(BIN_BLOB_SIZE, static_cast<char>(0xFF));
+    flashImg image = makeFirmware(block);
+
+    EXPECT_FALSE(interface->flash(image));
+}
+
+TEST(EDBInterfaceTest, StopsWhenProgramConfirmationTimesOut) {
+    FakeTransport* transport = nullptr;
+    std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
+    ASSERT_EQ(interface->open(false), 0);
+    const std::vector<char> block(BIN_BLOB_SIZE, static_cast<char>(0xFF));
+    transport->commandResponses = {"PONG\n", "READY\n", checksumResponse(block),
+                                   "PG-NOPE\n", "PG-STILL-NOPE\n"};
+    transport->writeDataResult = BIN_BLOB_SIZE;
+
+    flashImg image = makeFirmware(block);
+
+    EXPECT_FALSE(interface->flash(image));
+    EXPECT_EQ(transport->resetCount, 6);
+}
+
+TEST(EDBInterfaceTest, SetsBootImageMetadataAfterSuccessfulFlash) {
+    FakeTransport* transport = nullptr;
+    std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
+    ASSERT_EQ(interface->open(false), 0);
+    const std::vector<char> block(BIN_BLOB_SIZE, static_cast<char>(0xFF));
+    transport->commandResponses = {"PONG\n", "READY\n", checksumResponse(block),
+                                   "EROK\n", "PGOK\n", "MKOK\n"};
+    transport->writeDataResult = BIN_BLOB_SIZE;
+
+    flashImg image = makeFirmware(block, 128, true);
+
+    EXPECT_TRUE(interface->flash(image));
+    ASSERT_GE(transport->commands.size(), 5u);
+    EXPECT_NE(transport->commands[4].find("PROGP:128,1\n"), std::string::npos);
+    EXPECT_NE(transport->commands.back().find("MKNCB: 2, 16\n"), std::string::npos);
 }
