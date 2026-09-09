@@ -47,7 +47,8 @@ unsigned char blockChksum(char* block, unsigned int blockSize) {
     return sum;
 }
 
-EDBInterface::EDBInterface() : transport(createEDBTransport()) {}
+EDBInterface::EDBInterface()
+    : transport(createEDBTransport()) {}
 
 EDBInterface::~EDBInterface() {
     close();
@@ -216,11 +217,11 @@ bool EDBInterface::ping() {
             strcmp(wrBuf.get(), "PONG\n") == 0) {
             return true;
         }
-    #ifdef _WIN32
+#ifdef _WIN32
         Sleep(2000);
-    #else
+#else
         sleep(2);
-    #endif
+#endif
         retry--;
     }
     return false;
