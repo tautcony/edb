@@ -44,7 +44,7 @@ namespace {
         int hCMDf = -1;
         int hDATf = -1;
         std::string devicePath;
-        bool mounted = false;
+        bool mountedByUs = false;
         bool serialMode = false;
         EDBSerialPosix serial;
 
@@ -84,8 +84,7 @@ namespace {
             return false;
         }
 
-        bool mountDevice(std::string* mountPath) {
-            runCommand("udisksctl mount -b " + shellQuote(devicePath));
+        bool findMountPath(std::string* mountPath) {
             const std::string output = runCommand(
                 "lsblk -d -P -p -o HOTPLUG,VENDOR,LABEL,MOUNTPOINTS");
             std::string lines = output;
@@ -104,11 +103,22 @@ namespace {
                     char* path = findField(buffer, "MOUNTPOINTS=\"");
                     if (path) {
                         *mountPath = path;
-                        mounted = true;
                         return true;
                     }
                 }
                 start = end + 1;
+            }
+            return false;
+        }
+
+        bool mountDevice(std::string* mountPath) {
+            if (findMountPath(mountPath)) {
+                return true;
+            }
+            runCommand("udisksctl mount -b " + shellQuote(devicePath));
+            if (findMountPath(mountPath)) {
+                mountedByUs = true;
+                return true;
             }
             return false;
         }
@@ -124,28 +134,29 @@ namespace {
                     return -1;
                 }
                 serialMode = true;
+                EDB_LOG_INFO("Transport", "CDC configured: 14400 baud, 8N1.");
                 return 0;
             }
-            EDB_LOG_INFO("Transport", "Waiting for USB CDC connection...");
+            EDB_LOG_INFO("Transport", "Waiting for CDC connection...");
             for (int retry = 0; retry < 5; retry++) {
                 if (findDevice()) {
                     break;
                 }
                 if (retry == 4) {
-                    EDB_LOG_ERROR("Transport", "Timed out waiting for USB CDC connection.");
+                    EDB_LOG_ERROR("Transport", "Timed out waiting for CDC connection.");
                     return -1;
                 }
                 sleep(2);
             }
 
-            EDB_LOG_INFO("Transport", "USB CDC connected: " << devicePath);
+            EDB_LOG_INFO("Transport", "CDC connected: " << devicePath);
             EDB_LOG_INFO("Transport", "Mounting USB device...");
             std::string mountPath;
             if (!mountDevice(&mountPath)) {
                 EDB_LOG_ERROR("Transport", "Mounting failed.");
                 return -1;
             }
-
+            EDB_LOG_INFO("Transport", "MSC mounted at " << mountPath << ".");
             const std::string commandPath = mountPath + "/cmd_port";
             const std::string dataPath = mountPath + "/dat_port";
 #ifdef O_DIRECT
@@ -162,6 +173,7 @@ namespace {
                 close();
                 return -1;
             }
+            EDB_LOG_INFO("Transport", "MSC command and data ports opened.");
             return 0;
         }
 
@@ -185,10 +197,10 @@ namespace {
                 ::close(hDATf);
                 hDATf = -1;
             }
-            if (mounted && !devicePath.empty()) {
+            if (mountedByUs && !devicePath.empty()) {
                 EDB_LOG_INFO("Transport", "Unmounting USB device.");
                 runCommand("udisksctl unmount -b " + shellQuote(devicePath));
-                mounted = false;
+                mountedByUs = false;
             }
             devicePath.clear();
         }

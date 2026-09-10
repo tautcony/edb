@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <string>
 #include <time.h>
 #ifdef _WIN32
 #include <malloc.h>
@@ -79,8 +80,9 @@ bool EDBInterface::wrStr(const char* str) {
     }
     memset(wrBuf.get(), 0, wrBufSize);
     memcpy(wrBuf.get(), str, length);
-    return transport->writeCommand(wrBuf.get(), wrBufSize) ==
-           static_cast<std::ptrdiff_t>(wrBufSize);
+    const size_t writeLength = massStorageMode ? wrBufSize : length;
+    return transport->writeCommand(wrBuf.get(), writeLength) ==
+           static_cast<std::ptrdiff_t>(writeLength);
 }
 
 bool EDBInterface::wrDat(char* dat, size_t len) {
@@ -121,10 +123,6 @@ int EDBInterface::flash(const flashImg& item) {
     size_t cnt;
     size_t rbcnt;
     reset(EDB_MODE_TEXT);
-    if (!ping()) {
-        EDB_LOG_ERROR("EDB", "Device is not responding.");
-        return false;
-    }
     if (!wrStr("RESETDBUF\n")) {
         EDB_LOG_ERROR("EDB", "Unable to reset device buffer.");
         return false;
@@ -238,7 +236,21 @@ int EDBInterface::flash(const flashImg& item) {
 }
 
 bool EDBInterface::reboot() {
-    return wrStr("REBOOT\n");
+    const char command[] = "REBOOT\n";
+    const size_t length = sizeof(command) - 1;
+    memset(wrBuf.get(), 0, wrBufSize);
+    memcpy(wrBuf.get(), command, length);
+    const size_t writeLength = massStorageMode ? wrBufSize : length;
+    const std::ptrdiff_t result =
+        transport->writeCommand(wrBuf.get(), writeLength);
+    if (result == static_cast<std::ptrdiff_t>(writeLength)) {
+        return true;
+    }
+    if (result < 0) {
+        EDB_LOG_INFO("EDB", "REBOOT disconnected the transport.");
+        return true;
+    }
+    return false;
 }
 bool EDBInterface::vm_suspend() {
     return wrStr("VMSUSPEND\n");
@@ -253,26 +265,71 @@ bool EDBInterface::mscmode() {
     return wrStr("MSCDATA\n");
 }
 
-bool EDBInterface::ping() {
-    int retry = 5;
-    while (retry) {
-        memset(wrBuf.get(), 0, wrBufSize);
-        reset(EDB_MODE_TEXT);
-        if (!wrStr("PING\n")) {
+namespace {
+    bool readCdcStatus(EDBTransport* cdcTransport) {
+        char buffer[512] = {};
+        std::string output;
+
+        // Discard data emitted while the CDC interface was opening.
+        cdcTransport->readCommand(buffer, sizeof(buffer));
+
+        const char command[] = "getstatus\n";
+        if (cdcTransport->writeCommand(command, sizeof(command) - 1) !=
+            static_cast<std::ptrdiff_t>(sizeof(command) - 1)) {
+            EDB_LOG_ERROR("EDB", "Unable to send getstatus to CDC.");
             return false;
         }
-        if (transport->readCommand(wrBuf.get(), wrBufSize) > 0 &&
-            strcmp(wrBuf.get(), "PONG\n") == 0) {
-            return true;
+
+        const long long deadline = getTime() + 5000;
+        while (getTime() < deadline) {
+            const std::ptrdiff_t count =
+                cdcTransport->readCommand(buffer, sizeof(buffer));
+            if (count <= 0) {
+                continue;
+            }
+            output.append(buffer, static_cast<size_t>(count));
+            if (output.find("Power Speed:") != std::string::npos ||
+                output.find("Free PhyMem") != std::string::npos) {
+                break;
+            }
         }
-#ifdef _WIN32
-        Sleep(2000);
-#else
-        sleep(2);
-#endif
-        retry--;
+
+        const std::string statusMessage = "CDC status output:\n" + output;
+        EDB_LOG_INFO("EDB", statusMessage);
+        const bool hasLoaderInfo = output.find("OS Loader Info") != std::string::npos ||
+                                   output.find("Free PhyMem") != std::string::npos;
+        const bool hasRuntimeStatus =
+            output.find("cmd:getstatus") != std::string::npos &&
+            (output.find("Batt. voltage:") != std::string::npos ||
+             output.find("VDDIO:") != std::string::npos ||
+             output.find("VDD5V:") != std::string::npos ||
+             output.find("Core Temp:") != std::string::npos);
+        return hasLoaderInfo || hasRuntimeStatus;
     }
-    return false;
+} // namespace
+
+bool EDBInterface::checkViaCdc() {
+    if (!massStorageMode) {
+        return checkSerial();
+    }
+
+    std::unique_ptr<EDBTransport> cdcTransport(createEDBTransport());
+    if (!cdcTransport || cdcTransport->open(EDBTransportMode::Serial, serialPath) != 0) {
+        EDB_LOG_ERROR("EDB", "Unable to open CDC transport for status check.");
+        return false;
+    }
+    cdcTransport->reset(EDB_MODE_TEXT);
+    const bool result = readCdcStatus(cdcTransport.get());
+    cdcTransport->close();
+    return result;
+}
+
+bool EDBInterface::checkSerial() {
+    if (massStorageMode) {
+        return checkViaCdc();
+    }
+    reset(EDB_MODE_TEXT);
+    return readCdcStatus(transport.get());
 }
 
 void EDBInterface::close() {
@@ -286,6 +343,7 @@ void EDBInterface::setSerialPort(const char* path) {
 }
 
 int EDBInterface::open(bool useMassStorage) {
+    massStorageMode = useMassStorage;
     wrBuf = alignedBuffer(512, wrBufSize);
     sendBuf = alignedBuffer(512, BIN_BLOB_SIZE);
     if (!wrBuf || !sendBuf) {

@@ -53,10 +53,10 @@ bool CComHelper::Set() {
     if (!GetCommState(hCom, &dcb)) {
         return false;
     }
-    dcb.BaudRate = 115200;
-    dcb.ByteSize = 8;           //每个字节有8位
-    dcb.Parity = NOPARITY;      //无奇偶校验位
-    dcb.StopBits = TWOSTOPBITS; //两个停止位
+    dcb.BaudRate = 14400;
+    dcb.ByteSize = 8;          //每个字节有8位
+    dcb.Parity = NOPARITY;     //无奇偶校验位
+    dcb.StopBits = ONESTOPBIT; //一个停止位
     if (!SetCommState(hCom, &dcb)) {
         return false;
     }

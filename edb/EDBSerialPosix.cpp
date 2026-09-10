@@ -53,9 +53,10 @@ int EDBSerialPosix::open(const char* preferredPath) {
         return -1;
     }
     cfmakeraw(&settings);
-    cfsetispeed(&settings, B115200);
-    cfsetospeed(&settings, B115200);
-    settings.c_cflag |= CLOCAL | CREAD | CSTOPB;
+    cfsetispeed(&settings, B14400);
+    cfsetospeed(&settings, B14400);
+    settings.c_cflag |= CLOCAL | CREAD;
+    settings.c_cflag &= ~CSTOPB;
     settings.c_cflag &= ~CSIZE;
     settings.c_cflag |= CS8;
     settings.c_cc[VMIN] = 0;

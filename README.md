@@ -23,7 +23,7 @@ Actions:
   -c, --check                    Check the connection, then exit.
 
 Transport:
-  -s, --mass-storage             Use USB mass storage (default).
+      -s, --mass-storage             Use MSC (default).
       --serial                   Auto-detect a serial transport.
   -p, --port <path>              Use the specified serial port.
 

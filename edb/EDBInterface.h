@@ -50,6 +50,7 @@ private:
     AlignedBuffer wrBuf;
     AlignedBuffer sendBuf;
     const char* serialPath = nullptr;
+    bool massStorageMode = true;
 
 public:
     char* c_mnt_path = (char*)"/tmp/edbMount";
@@ -72,7 +73,8 @@ public:
     bool vm_resume();
     bool vm_reset();
     bool mscmode();
-    bool ping();
+    bool checkViaCdc();
+    bool checkSerial();
     void close();
     void setSerialPort(const char* path);
     int open(bool mode);

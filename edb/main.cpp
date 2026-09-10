@@ -26,7 +26,7 @@ void showUsage() {
               << "  -m, --msc                      Enter mass-storage mode after connecting.\n"
               << "  -c, --check                    Check the connection, then exit.\n\n"
               << "Transport:\n"
-              << "  -s, --mass-storage             Use USB mass storage (default).\n"
+              << "  -s, --mass-storage             Use MSC (default).\n"
               << "      --serial                   Auto-detect a serial transport.\n"
               << "  -p, --port <path>              Use the specified serial port.\n\n"
               << "Other:\n"
@@ -148,7 +148,8 @@ int main(int argc, char* argv[]) {
     if (serialPath) {
         edb.setSerialPort(serialPath);
     }
-    EDB_LOG_INFO("CLI", "Opening " << (useMassStorage ? "USB mass storage" : "serial transport") << "...");
+    const bool rebootOnly = reboot && imglist.empty() && !mscmode && !checkOnly;
+    EDB_LOG_INFO("CLI", "Opening " << (useMassStorage ? "MSC" : "CDC") << "...");
     if (edb.open(useMassStorage)) {
         EDB_LOG_ERROR("CLI", "Unable to open the selected transport.");
         edb.close();
@@ -156,24 +157,34 @@ int main(int argc, char* argv[]) {
     }
     EDB_LOG_INFO("CLI", "Transport opened.");
 
-    EDB_LOG_INFO("CLI", "Sending PING and waiting for PONG...");
-    if (edb.ping() == false) {
-        EDB_LOG_ERROR("CLI", "Device did not respond to PING.");
+    if (checkOnly) {
+        EDB_LOG_INFO("CLI", "Opening CDC status check...");
+        if (!(useMassStorage ? edb.checkViaCdc() : edb.checkSerial())) {
+            EDB_LOG_ERROR("CLI", "CDC status check failed.");
+            edb.close();
+            return 10;
+        }
+        EDB_LOG_INFO("CLI", "PASS: device connection, MSC, and CDC status check passed.");
         edb.close();
-        return 10;
+        return 0;
     }
-    EDB_LOG_INFO("CLI", "Device responded with PONG.");
+
+    if (!rebootOnly) {
+        EDB_LOG_INFO("CLI", "Opening CDC status check...");
+        if (!(useMassStorage ? edb.checkViaCdc() : edb.checkSerial())) {
+            EDB_LOG_ERROR("CLI", "CDC status check failed.");
+            edb.close();
+            return 10;
+        }
+        EDB_LOG_INFO("CLI", "CDC status check passed.");
+    } else {
+        EDB_LOG_INFO("CLI", "Reboot-only operation; skipping status check.");
+    }
 
     if (interruptRequested) {
         EDB_LOG_WARN("CLI", "Interrupted by user.");
         edb.close();
         return 130;
-    }
-
-    if (checkOnly) {
-        EDB_LOG_INFO("CLI", "PASS: device connection and transport access check passed.");
-        edb.close();
-        return 0;
     }
 
     if (mscmode) {
@@ -184,25 +195,29 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    bool flashSucceeded = edb.vm_suspend();
-    if (!flashSucceeded) {
-        EDB_LOG_ERROR("CLI", "Unable to suspend the device VM.");
-    }
-    for (flashImg& item : imglist) {
-        if (!flashSucceeded || interruptRequested) {
-            flashSucceeded = false;
-            break;
+    bool flashSucceeded = true;
+    if (!imglist.empty()) {
+        flashSucceeded = edb.vm_suspend();
+        if (!flashSucceeded) {
+            EDB_LOG_ERROR("CLI", "Unable to suspend the device VM.");
         }
-        if (edb.flash(item) != 0) {
-            flashSucceeded = false;
-            break;
+        for (flashImg& item : imglist) {
+            if (!flashSucceeded || interruptRequested) {
+                flashSucceeded = false;
+                break;
+            }
+            if (edb.flash(item) != 0) {
+                flashSucceeded = false;
+                break;
+            }
         }
     }
-    // edb.vm_reset();
-    // edb.vm_resume();
 
     if (flashSucceeded && reboot && !edb.reboot()) {
         EDB_LOG_ERROR("CLI", "Unable to reboot the device.");
+        flashSucceeded = false;
+    } else if (flashSucceeded && !reboot && !imglist.empty() && !edb.vm_resume()) {
+        EDB_LOG_ERROR("CLI", "Unable to resume the device VM.");
         flashSucceeded = false;
     }
 

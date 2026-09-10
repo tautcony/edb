@@ -163,39 +163,40 @@ namespace {
                     return -1;
                 }
                 serialMode = true;
-                EDB_LOG_INFO("Transport", "Serial port configured: 115200 baud, 8N2.");
+                EDB_LOG_INFO("Transport", "CDC configured: 14400 baud, 8N1.");
                 return 0;
             }
 
             const int maxAttempts = 3;
             std::wstring root;
             for (int attempt = 1; attempt <= maxAttempts; ++attempt) {
-                EDB_LOG_INFO("Transport", "Searching for ExistOS mass storage volume (attempt "
+                EDB_LOG_INFO("Transport", "Searching for ExistOS MSC volume (attempt "
                                               << attempt << "/" << maxAttempts << ")...");
                 root = findMassStorageRoot();
                 if (!root.empty()) {
                     break;
                 }
                 if (attempt < maxAttempts) {
-                    EDB_LOG_WARN("Transport", "Mass storage volume not found; retrying in 2 seconds.");
+                    EDB_LOG_WARN("Transport", "MSC volume not found; retrying in 2 seconds.");
                     Sleep(2000);
                 }
             }
             if (root.empty()) {
-                EDB_LOG_ERROR("Transport", "No ExistOS mass storage volume found after "
+                EDB_LOG_ERROR("Transport", "No ExistOS MSC volume found after "
                                                << maxAttempts << " attempts.");
                 return -1;
             }
-            EDB_LOG_INFO("Transport", "Identified mass storage volume.");
-            EDB_LOG_INFO("Transport", "Opening mass storage command and data ports...");
+            EDB_LOG_INFO("Transport", "Identified MSC volume.");
+            EDB_LOG_INFO("Transport", "MSC volume ready.");
+            EDB_LOG_INFO("Transport", "Opening MSC command and data ports...");
             hCMDf = openFile(root + L"cmd_port");
             hDATf = openFile(root + L"dat_port");
             if (hCMDf == INVALID_HANDLE_VALUE || hDATf == INVALID_HANDLE_VALUE) {
-                EDB_LOG_ERROR("Transport", "Unable to open mass storage ports.");
+                EDB_LOG_ERROR("Transport", "Unable to open MSC ports.");
                 close();
                 return -1;
             }
-            EDB_LOG_INFO("Transport", "Mass storage ports opened.");
+            EDB_LOG_INFO("Transport", "MSC ports opened.");
             return 0;
         }
 

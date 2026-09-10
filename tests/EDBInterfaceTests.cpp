@@ -13,7 +13,7 @@ namespace {
     class FakeTransport final : public EDBTransport {
     public:
         int openResult = 0;
-        std::ptrdiff_t writeCommandResult = 512;
+        std::ptrdiff_t writeCommandResult = -2;
         std::ptrdiff_t writeDataResult = -1;
         std::vector<std::string> commandResponses;
         std::vector<std::string> commands;
@@ -37,7 +37,8 @@ namespace {
 
         std::ptrdiff_t writeCommand(const char* buffer, size_t length) override {
             commands.emplace_back(buffer, length);
-            return writeCommandResult;
+            return writeCommandResult == -2 ? static_cast<std::ptrdiff_t>(length)
+                                            : writeCommandResult;
         }
 
         std::ptrdiff_t readData(char*, size_t) override { return -1; }
@@ -80,17 +81,6 @@ namespace {
     }
 } // namespace
 
-TEST(EDBInterfaceTest, PingWritesCommandAndAcceptsPong) {
-    FakeTransport* transport = nullptr;
-    std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
-    ASSERT_EQ(interface->open(false), 0);
-    transport->commandResponses.push_back("PONG\n");
-
-    EXPECT_TRUE(interface->ping());
-    ASSERT_EQ(transport->commands.size(), 1u);
-    EXPECT_EQ(transport->commands[0].substr(0, 5), "PING\n");
-}
-
 TEST(EDBInterfaceTest, RejectsShortCommandWrite) {
     FakeTransport* transport = nullptr;
     std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
@@ -98,6 +88,15 @@ TEST(EDBInterfaceTest, RejectsShortCommandWrite) {
     transport->writeCommandResult = 1;
 
     EXPECT_FALSE(interface->wrStr("PING\n"));
+}
+
+TEST(EDBInterfaceTest, TreatsRebootDisconnectAsSuccess) {
+    FakeTransport* transport = nullptr;
+    std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
+    ASSERT_EQ(interface->open(false), 0);
+    transport->writeCommandResult = -1;
+
+    EXPECT_TRUE(interface->reboot());
 }
 
 TEST(EDBInterfaceTest, ReportsShortResponseAndCopiesOnlyAvailableBytes) {
@@ -135,7 +134,7 @@ TEST(EDBInterfaceTest, FlashesOneCompleteBlockAfterChecksumConfirmation) {
     const unsigned int checksum = blockChksum(block.data(), block.size());
     char checksumResponse[16] = {};
     snprintf(checksumResponse, sizeof(checksumResponse), "CHKSUM:%02x\n", checksum);
-    transport->commandResponses = {"PONG\n", "READY\n", checksumResponse, "EROK\n", "PGOK\n"};
+    transport->commandResponses = {"READY\n", checksumResponse, "EROK\n", "PGOK\n"};
 
     FILE* file = tmpfile();
     ASSERT_NE(file, nullptr);
@@ -155,7 +154,6 @@ TEST(EDBInterfaceTest, EmptyFirmwareDoesNotWriteADataBlock) {
     FakeTransport* transport = nullptr;
     std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
     ASSERT_EQ(interface->open(false), 0);
-    transport->commandResponses.push_back("PONG\n");
     transport->commandResponses.push_back("READY\n");
 
     FILE* file = tmpfile();
@@ -200,7 +198,7 @@ TEST(EDBInterfaceTest, StopsWhenDataBlockWriteFails) {
     FakeTransport* transport = nullptr;
     std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
     ASSERT_EQ(interface->open(false), 0);
-    transport->commandResponses = {"PONG\n", "READY\n"};
+    transport->commandResponses = {"READY\n"};
     transport->writeDataResult = -1;
 
     const std::vector<char> block(BIN_BLOB_SIZE, static_cast<char>(0xFF));
@@ -214,7 +212,7 @@ TEST(EDBInterfaceTest, StopsWhenDeviceChecksumDoesNotMatch) {
     FakeTransport* transport = nullptr;
     std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
     ASSERT_EQ(interface->open(false), 0);
-    transport->commandResponses = {"PONG\n", "READY\n", "CHKSUM:00\n"};
+    transport->commandResponses = {"READY\n", "CHKSUM:00\n"};
     transport->writeDataResult = BIN_BLOB_SIZE;
 
     const std::vector<char> block(BIN_BLOB_SIZE, static_cast<char>(0xFF));
@@ -228,14 +226,14 @@ TEST(EDBInterfaceTest, StopsWhenProgramConfirmationTimesOut) {
     std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
     ASSERT_EQ(interface->open(false), 0);
     const std::vector<char> block(BIN_BLOB_SIZE, static_cast<char>(0xFF));
-    transport->commandResponses = {"PONG\n", "READY\n", checksumResponse(block),
+    transport->commandResponses = {"READY\n", checksumResponse(block),
                                    "PG-NOPE\n", "PG-STILL-NOPE\n"};
     transport->writeDataResult = BIN_BLOB_SIZE;
 
     flashImg image = makeFirmware(block);
 
     EXPECT_FALSE(interface->flash(image));
-    EXPECT_EQ(transport->resetCount, 6);
+    EXPECT_EQ(transport->resetCount, 5);
 }
 
 TEST(EDBInterfaceTest, SetsBootImageMetadataAfterSuccessfulFlash) {
@@ -243,7 +241,7 @@ TEST(EDBInterfaceTest, SetsBootImageMetadataAfterSuccessfulFlash) {
     std::unique_ptr<EDBInterface> interface = makeInterface(&transport);
     ASSERT_EQ(interface->open(false), 0);
     const std::vector<char> block(BIN_BLOB_SIZE, static_cast<char>(0xFF));
-    transport->commandResponses = {"PONG\n", "READY\n", checksumResponse(block),
+    transport->commandResponses = {"READY\n", checksumResponse(block),
                                    "EROK\n", "PGOK\n", "MKOK\n"};
     transport->writeDataResult = BIN_BLOB_SIZE;
 
@@ -251,6 +249,6 @@ TEST(EDBInterfaceTest, SetsBootImageMetadataAfterSuccessfulFlash) {
 
     EXPECT_TRUE(interface->flash(image));
     ASSERT_GE(transport->commands.size(), 5u);
-    EXPECT_NE(transport->commands[4].find("PROGP:128,1\n"), std::string::npos);
+    EXPECT_NE(transport->commands[3].find("PROGP:128,1\n"), std::string::npos);
     EXPECT_NE(transport->commands.back().find("MKNCB: 2, 16\n"), std::string::npos);
 }
