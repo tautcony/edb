@@ -18,18 +18,18 @@ EDB 工具支持以下命令行参数：
 Usage: edb [options]
 
 Actions:
-	-f, --file <path> <page> [b]  Flash a binary image; add 'b' for boot image.
-	-m, --msc                    Enter mass-storage mode after connecting.
-	-c, --check                  Check the connection, then exit.
+  -f, --file <path> <page> [b]   Flash a binary image; add 'b' for boot image.
+  -m, --msc                      Enter mass-storage mode after connecting.
+  -c, --check                    Check the connection, then exit.
 
 Transport:
-	-s, --mass-storage           Use USB mass storage (default).
-			--serial                 Auto-detect a serial transport.
-	-p, --port <path>            Use the specified serial port.
+  -s, --mass-storage             Use USB mass storage (default).
+      --serial                   Auto-detect a serial transport.
+  -p, --port <path>              Use the specified serial port.
 
 Other:
-	-r, --reboot                 Reboot after all operations complete.
-	-h, --help                  Show this help and exit.
+  -r, --reboot                   Reboot after all operations complete.
+  -h, --help                     Show this help and exit.
 ```
 
 ## 使用示例
@@ -141,6 +141,12 @@ edb/
 .\scripts\package.ps1
 ```
 
+运行 Windows 单元测试：
+
+```powershell
+.\scripts\test.ps1
+```
+
 Visual Studio 工程文件由 CMake 生成在构建目录中，不需要手动维护。
 
 Windows 后端使用 Windows SDK 提供的 Win32 API，链接系统库 `Advapi32.lib`。
@@ -151,6 +157,12 @@ Windows 后端使用 Windows SDK 提供的 Win32 API，链接系统库 `Advapi32
 
 ```bash
 ./scripts/build.sh
+```
+
+运行 Linux 和 macOS 单元测试：
+
+```bash
+./scripts/test.sh
 ```
 
 ## 注意事项

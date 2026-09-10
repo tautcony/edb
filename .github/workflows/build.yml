@@ -16,7 +16,7 @@ jobs:
     runs-on: ubuntu-22.04
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Install clang-format
         run: |
@@ -48,7 +48,16 @@ jobs:
     runs-on: ${{ matrix.runner }}
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
+
+      - name: Run tests on Unix
+        if: matrix.platform != 'windows'
+        run: ./scripts/test.sh
+
+      - name: Run tests on Windows
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: .\scripts\test.ps1 -Generator "Visual Studio 17 2022"
 
       - name: Build and package on Unix
         if: matrix.platform != 'windows'
@@ -64,7 +73,7 @@ jobs:
           Compress-Archive -Path dist/edb-windows-x86_64 -DestinationPath dist/edb-windows-x86_64.zip
 
       - name: Upload binary artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: edb-${{ matrix.platform }}-${{ matrix.arch }}
           path: dist/*.*
@@ -80,7 +89,7 @@ jobs:
       contents: write
     steps:
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: release-assets
           pattern: edb-*

@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.16)
 project(ExistOS-Dump-Bridge VERSION 0.1.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
+option(BUILD_TESTING "Build unit tests" OFF)
 include(CTest)
 
 set(CMAKE_CXX_STANDARD 11)

@@ -22,16 +22,16 @@ volatile sig_atomic_t interruptRequested = 0;
 void showUsage() {
     std::cout << "Usage: edb [options]\n\n"
               << "Actions:\n"
-              << "  -f, --file <path> <page> [b]  Flash a binary image; add 'b' for boot image.\n"
-              << "  -m, --msc                    Enter mass-storage mode after connecting.\n"
-              << "  -c, --check                  Check the connection, then exit.\n\n"
+              << "  -f, --file <path> <page> [b]   Flash a binary image; add 'b' for boot image.\n"
+              << "  -m, --msc                      Enter mass-storage mode after connecting.\n"
+              << "  -c, --check                    Check the connection, then exit.\n\n"
               << "Transport:\n"
-              << "  -s, --mass-storage           Use USB mass storage (default).\n"
-              << "      --serial                 Auto-detect a serial transport.\n"
-              << "  -p, --port <path>            Use the specified serial port.\n\n"
+              << "  -s, --mass-storage             Use USB mass storage (default).\n"
+              << "      --serial                   Auto-detect a serial transport.\n"
+              << "  -p, --port <path>              Use the specified serial port.\n\n"
               << "Other:\n"
-              << "  -r, --reboot                 Reboot after all operations complete.\n"
-              << "  -h, --help                  Show this help and exit.\n";
+              << "  -r, --reboot                   Reboot after all operations complete.\n"
+              << "  -h, --help                     Show this help and exit.\n";
 }
 
 void handleInterrupt(int id) {
