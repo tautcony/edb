@@ -1,0 +1,84 @@
+tests/EDBInterfaceTests.cpp
+  s_8f6320838668ac::t_08df3659a5a271 16,40-41,254
+  s_8f6320838668ac::t_f42429e1419f29 236
+  s_8f6320838668ac::t_4e32129f9aae8e 137,201,215,229
+  s_8f6320838668ac::t_d8a7c4154cb5b5 244,252
+  s_8f6320838668ac::t_9e0c83d03a0e48 93,97,99
+  s_8f6320838668ac::t_6f90535ec4febe 84,88,90
+edb/EDBTransportMac.cpp
+  s_be600be7fda97c::t_37952f399f0b83 243
+  s_8f6320838668ac::t_7c91eadc215b2a 229
+  s_be600be7fda97c::t_a78f94657545a3 18,139-150,152-154
+  s_be600be7fda97c::t_783f69acb439a0 186-188
+  s_8f6320838668ac::t_e0e92227e77724 220,223,235
+  s_be600be7fda97c::t_bedfc82952ab51 88-95
+  s_be600be7fda97c::t_fa69cf398a1d74 135,290,293
+  s_8f6320838668ac::t_e2066a41ba144d 250,266
+edb/EDBInterface.h
+  s_8f6320838668ac::t_08df3659a5a271 53
+  s_8f6320838668ac::t_4e32129f9aae8e 76-77
+edb/EDBInterface.cpp
+  s_8f6320838668ac::t_4e32129f9aae8e 9,268-279,282-290,296,309-332
+  h_3705811fa4502c 250
+  s_8f6320838668ac::t_9e0c83d03a0e48 239-249,251-253,299-307
+  s_8f6320838668ac::t_e0e92227e77724 291-294
+  s_8f6320838668ac::t_08df3659a5a271 83-85,346
+  s_8f6320838668ac::t_81b762b7168261 297-298
+edb/main.cpp
+  s_8f6320838668ac::t_e2066a41ba144d 29
+  s_8f6320838668ac::t_e0e92227e77724 152,161,173
+  s_8f6320838668ac::t_4e32129f9aae8e 162-163,167,174-175,179
+  s_8f6320838668ac::t_d8a7c4154cb5b5 181
+  s_be600be7fda97c::t_5ac7152c8af2a8 151,172,176-178,180
+  s_be600be7fda97c::t_3d0c00f0ba273d 160,164-166,169-171
+  s_be600be7fda97c::t_e6746a1dbc3b0c 219-220
+  s_be600be7fda97c::t_2ef8940ec80762 198-202,204-212
+  s_be600be7fda97c::t_f94852b04335b8 221
+edb/EDBSerialPosix.cpp
+  s_8f6320838668ac::t_08df3659a5a271 56-59
+edb/CComHelper.cpp
+  s_8f6320838668ac::t_08df3659a5a271 56
+  s_8f6320838668ac::t_b2cea205d04f70 57-58
+  s_8f6320838668ac::t_81b762b7168261 59
+edb/EDBTransportUnix.cpp
+  s_8f6320838668ac::t_e2066a41ba144d 159,176
+  s_8f6320838668ac::t_e0e92227e77724 137,140,152
+  s_be600be7fda97c::t_fa69cf398a1d74 47,120,200,203
+  s_8f6320838668ac::t_7c91eadc215b2a 146
+  s_be600be7fda97c::t_60ab86eaa8f379 87,114-119,121-122
+  s_8f6320838668ac::t_e83f803dbe687e 123-125
+README.md
+  s_8f6320838668ac::t_7c91eadc215b2a 26
+edb/EDBTransportWindows.cpp
+  s_8f6320838668ac::t_e0e92227e77724 166
+  s_8f6320838668ac::t_e2066a41ba144d 173,180,185,189-191,195,199
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "2e1d00777fda1d7cc44fbf8786fdf31842b9dad0",
+  "prompts": {},
+  "humans": {
+    "h_3705811fa4502c": {
+      "author": "TautCony <i@tautcony.xyz>"
+    }
+  },
+  "sessions": {
+    "s_8f6320838668ac": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08943-8468-72b3-addc-3d0245c3cb69",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    },
+    "s_be600be7fda97c": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a08552-626b-7733-8423-97c5df99b8a2",
+        "model": "gpt-5.6-luna"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
