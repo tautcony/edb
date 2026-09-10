@@ -7,8 +7,13 @@
 #include <iostream>
 #include <limits.h>
 #include <sys/ioctl.h>
-#include <termios.h>
 #include <unistd.h>
+#ifdef __linux__
+#include <asm/ioctls.h>
+#include <asm/termbits.h>
+#else
+#include <termios.h>
+#endif
 
 namespace {
     const char* findSerialPath(const char* preferredPath) {
@@ -47,6 +52,26 @@ int EDBSerialPosix::open(const char* preferredPath) {
         return -1;
     }
 
+#ifdef __linux__
+    struct termios2 settings = {};
+    if (ioctl(fd, TCGETS2, &settings) != 0) {
+        close();
+        return -1;
+    }
+    settings.c_iflag = 0;
+    settings.c_oflag = 0;
+    settings.c_lflag = 0;
+    settings.c_cflag = BOTHER | CS8 | CLOCAL | CREAD;
+    settings.c_ispeed = 14400;
+    settings.c_ospeed = 14400;
+    settings.c_cc[VMIN] = 0;
+    settings.c_cc[VTIME] = 10;
+    if (ioctl(fd, TCSETS2, &settings) != 0) {
+        close();
+        return -1;
+    }
+    ioctl(fd, TCFLSH, TCIOFLUSH);
+#else
     struct termios settings = {};
     if (tcgetattr(fd, &settings) != 0) {
         close();
@@ -66,6 +91,7 @@ int EDBSerialPosix::open(const char* preferredPath) {
         return -1;
     }
     tcflush(fd, TCIOFLUSH);
+#endif
     return 0;
 }
 
