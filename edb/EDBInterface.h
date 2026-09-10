@@ -67,7 +67,7 @@ public:
     bool wrDat(char* dat, size_t len);
     bool rdDat(char* dat, size_t len, size_t* rbcnt);
     bool eraseBlock(unsigned int block);
-    int flash(const flashImg& item);
+    bool flash(const flashImg& item);
     bool reboot();
     bool vm_suspend();
     bool vm_resume();

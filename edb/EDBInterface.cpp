@@ -118,7 +118,7 @@ bool EDBInterface::eraseBlock(unsigned int block) {
     return true;
 }
 
-int EDBInterface::flash(const flashImg& item) {
+bool EDBInterface::flash(const flashImg& item) {
     char cmdbuf[64];
     size_t cnt;
     size_t rbcnt;

@@ -34,6 +34,7 @@ int main(int argc, char* argv[]) {
     bool massStorageSelected = false;
     bool serialSelected = false;
     std::string serialPath;
+    std::string logLevelOption = "info";
 
     app.add_option_function<std::vector<std::string>>(
            "-f,--file",
@@ -57,12 +58,17 @@ int main(int argc, char* argv[]) {
                    }
                    item.bootImg = true;
                }
-               EDB_LOG_INFO("CLI", "Firmware target page: " << item.toPage);
                imglist.push_back(std::move(item));
            },
            "Flash a binary image: <path> <page> [b].")
         ->expected(2, 3)
         ->multi_option_policy(CLI::MultiOptionPolicy::TakeAll);
+
+    app.add_option("--log-level", logLevelOption,
+                   "Log verbosity: debug, info (default), warn, or error.")
+        ->default_str("info")
+        ->check(CLI::IsMember({"debug", "info", "warn", "error"},
+                              CLI::ignore_case));
 
     app.add_flag("-m,--msc", mscAction,
                  "Switch MSC to system-data mode via CDC, then exit.");
@@ -85,6 +91,19 @@ int main(int argc, char* argv[]) {
         app.parse(argc, argv);
     } catch (const CLI::ParseError& error) {
         return app.exit(error);
+    }
+
+    // Applied after parsing because the level is only known once the option has
+    // been read; everything below, including the images validated above, is
+    // logged through the filter.
+    edb_log::LogLevel level = edb_log::LogLevel::Info;
+    if (!edb_log::parseLogLevel(logLevelOption, &level)) {
+        EDB_LOG_ERROR("CLI", "Unknown log level: " << logLevelOption);
+        return 2;
+    }
+    edb_log::Logger::setLevel(level);
+    for (const flashImg& item : imglist) {
+        EDB_LOG_INFO("CLI", "Firmware target page: " << item.toPage);
     }
 
     const bool hasPort = !serialPath.empty();
@@ -162,7 +181,7 @@ int main(int argc, char* argv[]) {
                 operationSucceeded = false;
                 break;
             }
-            if (edb.flash(item) != 0) {
+            if (!edb.flash(item)) {
                 operationSucceeded = false;
                 break;
             }
