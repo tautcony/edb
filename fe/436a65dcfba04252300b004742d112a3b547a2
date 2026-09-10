@@ -1,0 +1,37 @@
+edb/EDBLog.h
+  s_e2820fdad93dd7::t_a568f559ef53bf 193
+  s_e2820fdad93dd7::t_c0d33054a33357 244-250
+  s_e2820fdad93dd7::t_23cbed855065e2 80-89,95-100
+  s_e2820fdad93dd7::t_33ac726e75a62f 41-61
+  s_e2820fdad93dd7::t_b4e9a242002bc2 157-158
+  s_e2820fdad93dd7::t_ff26d443b4acc0 129-130,151-152
+  s_e2820fdad93dd7::t_c331ac061a6fb3 1-2,4,6-11,20-40,62-79,90-94,101-125,133,135-150,153-156,159-192,194-243,251-277
+  s_e2820fdad93dd7::t_a75b1fc11ee7d3 126-128,131-132,134
+  s_e2820fdad93dd7::t_5a3e54c510d18c 5,12-19
+  s_e2820fdad93dd7::t_180b2702e80b5b 3
+edb/main.cpp
+  s_e2820fdad93dd7::t_6b5e8a7fc6118c 96-108
+  s_e2820fdad93dd7::t_2f371c75bb9b38 37
+  s_e2820fdad93dd7::t_9f22b68eeb6602 67-72
+  s_e2820fdad93dd7::t_b9840de55261e4 184
+edb/EDBInterface.h
+  s_e2820fdad93dd7::t_50718cb4d85aec 70
+edb/EDBInterface.cpp
+  s_e2820fdad93dd7::t_2d4d3b92ad5003 121
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.2",
+  "base_commit_sha": "fe436a65dcfba04252300b004742d112a3b547a2",
+  "prompts": {},
+  "sessions": {
+    "s_e2820fdad93dd7": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "57447b4d-a2a7-4ee6-861d-d8fd9fc17010",
+        "model": "deepseek-flash"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
