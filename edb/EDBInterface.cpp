@@ -247,7 +247,7 @@ bool EDBInterface::reboot() {
         return true;
     }
     if (result < 0) {
-        EDB_LOG_INFO("EDB", "REBOOT disconnected the transport.");
+        EDB_LOG_INFO("EDB", "REBOOT disconnected the MSC transport.");
         return true;
     }
     return false;
@@ -309,10 +309,6 @@ namespace {
 } // namespace
 
 bool EDBInterface::checkViaCdc() {
-    if (!massStorageMode) {
-        return checkSerial();
-    }
-
     std::unique_ptr<EDBTransport> cdcTransport(createEDBTransport());
     if (!cdcTransport || cdcTransport->open(EDBTransportMode::Serial, serialPath) != 0) {
         EDB_LOG_ERROR("EDB", "Unable to open CDC transport for status check.");

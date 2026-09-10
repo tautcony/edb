@@ -1,38 +1,21 @@
 #include "EDBInterface.h"
 #include "EDBLog.h"
 #include "EDBUtils.h"
-#include <cerrno>
-#include <climits>
-#include <cstring>
-#include <signal.h>
-#ifdef _WIN32
-#include <windows.h>
-#else
-#include <unistd.h>
-#endif
-#include <cstdlib>
-#include <limits>
+
+#include <CLI/CLI.hpp>
+
+#include <csignal>
+#include <cstdio>
+#include <deque>
+#include <iostream>
+#include <string>
 #include <vector>
 
 std::vector<flashImg> imglist;
+std::deque<std::string> imageNames;
 
 EDBInterface edb;
 volatile sig_atomic_t interruptRequested = 0;
-
-void showUsage() {
-    std::cout << "Usage: edb [options]\n\n"
-              << "Actions:\n"
-              << "  -f, --file <path> <page> [b]   Flash a binary image; add 'b' for boot image.\n"
-              << "  -m, --msc                      Enter mass-storage mode after connecting.\n"
-              << "  -c, --check                    Check the connection, then exit.\n\n"
-              << "Transport:\n"
-              << "  -s, --mass-storage             Use MSC (default).\n"
-              << "      --serial                   Auto-detect a serial transport.\n"
-              << "  -p, --port <path>              Use the specified serial port.\n\n"
-              << "Other:\n"
-              << "  -r, --reboot                   Reboot after all operations complete.\n"
-              << "  -h, --help                     Show this help and exit.\n";
-}
 
 void handleInterrupt(int id) {
     (void)id;
@@ -40,192 +23,165 @@ void handleInterrupt(int id) {
 }
 
 int main(int argc, char* argv[]) {
-#ifdef _WIN32
     signal(SIGINT, handleInterrupt);
-#else
-    struct sigaction sigHandler = {};
-    sigHandler.sa_handler = handleInterrupt;
-    sigemptyset(&sigHandler.sa_mask);
-    sigaction(SIGINT, &sigHandler, NULL);
-#endif
 
-    bool reboot = false;
-    bool mscmode = false;
+    CLI::App app{"EDB Embedded Device Bootloader"};
+    app.set_help_flag("-h,--help", "Show this help and exit.");
+
     bool checkOnly = false;
-    bool useMassStorage = true;
-    bool transportSelected = false;
-    const char* serialPath = nullptr;
+    bool mscAction = false;
+    bool reboot = false;
+    bool massStorageSelected = false;
+    bool serialSelected = false;
+    std::string serialPath;
 
-    if (argc < 2) {
-        showUsage();
-        return 1;
-    }
+    app.add_option_function<std::vector<std::string>>(
+           "-f,--file",
+           [](const std::vector<std::string>& values) {
+               if (values.size() < 2 || values.size() > 3) {
+                   throw CLI::ValidationError("--file requires <path> <page> [b]");
+               }
+               flashImg item;
+               if (!parsePage(values[1].c_str(), &item.toPage)) {
+                   throw CLI::ValidationError("Invalid flash page: " + values[1]);
+               }
+               item.f.reset(fopen(values[0].c_str(), "rb"));
+               if (!item.f) {
+                   throw CLI::ValidationError("Unable to open firmware file: " + values[0]);
+               }
+               imageNames.push_back(values[0]);
+               item.filename = const_cast<char*>(imageNames.back().c_str());
+               if (values.size() == 3) {
+                   if (values[2] != "b") {
+                       throw CLI::ValidationError("The optional --file argument must be 'b'");
+                   }
+                   item.bootImg = true;
+               }
+               EDB_LOG_INFO("CLI", "Firmware target page: " << item.toPage);
+               imglist.push_back(std::move(item));
+           },
+           "Flash a binary image: <path> <page> [b].")
+        ->expected(2, 3)
+        ->multi_option_policy(CLI::MultiOptionPolicy::TakeAll);
 
-    // if (geteuid() != 0) {
-    //     cout << "Please run with root privileges!" << endl;
-    //     return -1;
-    // }
+    app.add_flag("-m,--msc", mscAction,
+                 "Switch MSC to system-data mode via CDC, then exit.");
+    app.add_flag("-c,--check", checkOnly,
+                 "Check the selected transport, then exit.");
+    app.add_flag("-r,--reboot", reboot,
+                 "Reboot after all requested operations complete.");
+    app.add_flag("-s,--mass-storage", massStorageSelected,
+                 "Use MSC transport (default).");
+    app.add_flag("--serial", serialSelected,
+                 "Use CDC transport and auto-detect the port.");
+    app.add_option("-p,--port", serialPath,
+                   "Use the specified CDC port.");
 
-    for (int i = 1; i < argc; i++) {
-        const char* argument = argv[i];
-        if (strcmp(argument, "-h") == 0 || strcmp(argument, "--help") == 0) {
-            showUsage();
-            return 0;
-        } else if (strcmp(argument, "-f") == 0 ||
-                   strcmp(argument, "--file") == 0) {
-            if (i + 2 >= argc) {
-                EDB_LOG_ERROR("CLI", "Option " << argument
-                                               << " requires <path> and <page>.");
-                showUsage();
-                return 2;
-            }
-            flashImg item;
-            if (!parsePage(argv[i + 2], &item.toPage)) {
-                EDB_LOG_ERROR("CLI", "Invalid flash page: " << argv[i + 2]);
-                return 2;
-            }
-            item.f.reset(fopen(argv[i + 1], "rb"));
-            if (!item.f) {
-                EDB_LOG_ERROR("CLI", "Unable to open firmware file: " << argv[i + 1]);
-                return 2;
-            }
-            item.filename = argv[i + 1];
-            if (i + 3 < argc) {
-                if (strcmp(argv[i + 3], "b") == 0) {
-                    EDB_LOG_INFO("CLI", "Firmware will be written as boot image.");
-                    item.bootImg = true;
-                    i++;
-                }
-            }
-            EDB_LOG_INFO("CLI", "Firmware target page: " << item.toPage);
-            imglist.push_back(std::move(item));
-            i += 2;
-        } else if (strcmp(argument, "-r") == 0 ||
-                   strcmp(argument, "--reboot") == 0) {
-            reboot = true;
-        } else if (strcmp(argument, "-m") == 0 ||
-                   strcmp(argument, "--msc") == 0) {
-            mscmode = true;
-        } else if (strcmp(argument, "-s") == 0 ||
-                   strcmp(argument, "--mass-storage") == 0) {
-            if (transportSelected && !useMassStorage) {
-                EDB_LOG_ERROR("CLI", "Options --mass-storage and serial transport cannot be combined.");
-                return 2;
-            }
-            useMassStorage = true;
-            transportSelected = true;
-        } else if (strcmp(argument, "--serial") == 0) {
-            if (transportSelected && useMassStorage) {
-                EDB_LOG_ERROR("CLI", "Options --serial and --mass-storage cannot be combined.");
-                return 2;
-            }
-            useMassStorage = false;
-            transportSelected = true;
-        } else if (strcmp(argument, "-p") == 0 ||
-                   strcmp(argument, "--port") == 0) {
-            if (i + 1 >= argc) {
-                EDB_LOG_ERROR("CLI", "Option " << argument << " requires <path>.");
-                showUsage();
-                return 2;
-            }
-            if (transportSelected && useMassStorage) {
-                EDB_LOG_ERROR("CLI", "Options --port and --mass-storage cannot be combined.");
-                return 2;
-            }
-            useMassStorage = false;
-            serialPath = argv[++i];
-            transportSelected = true;
-        } else if (strcmp(argument, "-c") == 0 ||
-                   strcmp(argument, "--check") == 0) {
-            checkOnly = true;
-        } else {
-            EDB_LOG_ERROR("CLI", "Unknown option: " << argument);
-            showUsage();
-            return 2;
+    try {
+        if (argc < 2) {
+            std::cout << app.help() << std::endl;
+            return 1;
         }
+        app.parse(argc, argv);
+    } catch (const CLI::ParseError& error) {
+        return app.exit(error);
     }
 
-    if (serialPath) {
-        edb.setSerialPort(serialPath);
+    const bool hasPort = !serialPath.empty();
+    if (massStorageSelected && (serialSelected || hasPort)) {
+        EDB_LOG_ERROR("CLI", "MSC and CDC transport options cannot be combined.");
+        return 2;
     }
-    const bool rebootOnly = reboot && imglist.empty() && !mscmode && !checkOnly;
-    EDB_LOG_INFO("CLI", "Opening " << (useMassStorage ? "MSC" : "CDC") << "...");
-    if (edb.open(useMassStorage)) {
-        EDB_LOG_ERROR("CLI", "Unable to open the selected transport.");
-        edb.close();
-        return -1;
+    if (checkOnly && (mscAction || reboot || !imglist.empty())) {
+        EDB_LOG_ERROR("CLI", "--check cannot be combined with other actions.");
+        return 2;
     }
-    EDB_LOG_INFO("CLI", "Transport opened.");
+    if (mscAction && (reboot || !imglist.empty())) {
+        EDB_LOG_ERROR("CLI", "--msc cannot be combined with flashing or reboot.");
+        return 2;
+    }
+
+    const bool useMassStorage = !serialSelected && !hasPort;
+    if (!checkOnly && !useMassStorage) {
+        EDB_LOG_ERROR("CLI", "CDC transport currently supports status checks only; "
+                             "EDB control and flash commands require MSC.");
+        return 2;
+    }
+    if (hasPort) {
+        edb.setSerialPort(serialPath.c_str());
+    }
+
+    const bool needsMscTransport = !checkOnly;
+    if (needsMscTransport) {
+        EDB_LOG_INFO("CLI", "Opening " << (useMassStorage ? "MSC" : "CDC") << "...");
+        if (edb.open(useMassStorage) != 0) {
+            EDB_LOG_ERROR("CLI", "Unable to open the selected transport.");
+            edb.close();
+            return 1;
+        }
+        EDB_LOG_INFO("CLI", "Transport opened.");
+    } else {
+        EDB_LOG_INFO("CLI", "Status check will use CDC.");
+    }
 
     if (checkOnly) {
         EDB_LOG_INFO("CLI", "Opening CDC status check...");
-        if (!(useMassStorage ? edb.checkViaCdc() : edb.checkSerial())) {
+        const bool checked = edb.checkViaCdc();
+        if (!checked) {
             EDB_LOG_ERROR("CLI", "CDC status check failed.");
             edb.close();
             return 10;
         }
-        EDB_LOG_INFO("CLI", "PASS: device connection, MSC, and CDC status check passed.");
+        EDB_LOG_INFO("CLI", "PASS: transport and CDC status check passed.");
         edb.close();
         return 0;
     }
 
-    if (!rebootOnly) {
-        EDB_LOG_INFO("CLI", "Opening CDC status check...");
-        if (!(useMassStorage ? edb.checkViaCdc() : edb.checkSerial())) {
-            EDB_LOG_ERROR("CLI", "CDC status check failed.");
-            edb.close();
-            return 10;
-        }
-        EDB_LOG_INFO("CLI", "CDC status check passed.");
-    } else {
-        EDB_LOG_INFO("CLI", "Reboot-only operation; skipping status check.");
-    }
-
-    if (interruptRequested) {
-        EDB_LOG_WARN("CLI", "Interrupted by user.");
+    if (mscAction) {
+        EDB_LOG_INFO("CLI", "Switching MSC to system-data mode via MSC command port...");
+        const bool switched = edb.mscmode();
         edb.close();
-        return 130;
-    }
-
-    if (mscmode) {
-        if (!edb.vm_suspend() || !edb.mscmode()) {
-            EDB_LOG_ERROR("CLI", "Unable to enter mass-storage mode.");
-            edb.close();
+        if (!switched) {
+            EDB_LOG_ERROR("CLI", "Unable to switch MSC to system-data mode.");
             return 11;
         }
+        EDB_LOG_INFO("CLI", "MSC system-data mode requested.");
+        EDB_LOG_INFO("CLI", "MSC system-data mode is now active. Restart or exit this mode "
+                            "on the device before running EDB command operations again.");
+        return 0;
     }
 
-    bool flashSucceeded = true;
+    bool operationSucceeded = true;
     if (!imglist.empty()) {
-        flashSucceeded = edb.vm_suspend();
-        if (!flashSucceeded) {
+        operationSucceeded = edb.vm_suspend();
+        if (!operationSucceeded) {
             EDB_LOG_ERROR("CLI", "Unable to suspend the device VM.");
         }
         for (flashImg& item : imglist) {
-            if (!flashSucceeded || interruptRequested) {
-                flashSucceeded = false;
+            if (!operationSucceeded || interruptRequested) {
+                operationSucceeded = false;
                 break;
             }
             if (edb.flash(item) != 0) {
-                flashSucceeded = false;
+                operationSucceeded = false;
                 break;
             }
         }
     }
 
-    if (flashSucceeded && reboot && !edb.reboot()) {
+    if (operationSucceeded && reboot && !edb.reboot()) {
         EDB_LOG_ERROR("CLI", "Unable to reboot the device.");
-        flashSucceeded = false;
-    } else if (flashSucceeded && !reboot && !imglist.empty() && !edb.vm_resume()) {
+        operationSucceeded = false;
+    } else if (operationSucceeded && !reboot && !imglist.empty() &&
+               !edb.vm_resume()) {
         EDB_LOG_ERROR("CLI", "Unable to resume the device VM.");
-        flashSucceeded = false;
+        operationSucceeded = false;
     }
 
     edb.close();
-
     if (interruptRequested) {
         EDB_LOG_WARN("CLI", "Interrupted by user.");
         return 130;
     }
-    return flashSucceeded ? 0 : 11;
+    return operationSucceeded ? 0 : 11;
 }

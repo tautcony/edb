@@ -3,8 +3,19 @@ cmake_minimum_required(VERSION 3.16)
 project(ExistOS-Dump-Bridge VERSION 0.1.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
+include(FetchContent)
 option(BUILD_TESTING "Build unit tests" OFF)
 include(CTest)
+
+FetchContent_Declare(
+    CLI11
+    URL https://github.com/CLIUtils/CLI11/archive/refs/tags/v2.4.2.zip
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+)
+if(POLICY CMP0169)
+    cmake_policy(SET CMP0169 OLD)
+endif()
+FetchContent_Populate(CLI11)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -19,6 +30,7 @@ add_executable(edb
 target_include_directories(edb PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/edb
+    ${cli11_SOURCE_DIR}/include
 )
 
 if(BUILD_TESTING)

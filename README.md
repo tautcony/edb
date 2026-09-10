@@ -19,8 +19,8 @@ Usage: edb [options]
 
 Actions:
   -f, --file <path> <page> [b]   Flash a binary image; add 'b' for boot image.
-  -m, --msc                      Enter mass-storage mode after connecting.
-  -c, --check                    Check the connection, then exit.
+  -m, --msc                      Switch command-control MSC to system-data MSC, then exit.
+  -c, --check                    Check the selected transport, then exit.
 
 Transport:
       -s, --mass-storage             Use MSC (default).
@@ -60,11 +60,15 @@ edb.exe -f firmware.bin 0 -r
 edb.exe -f bootloader.bin 0 b
 ```
 
-### 进入MSC模式
+### 使用MSC传输
 
 ```bash
 edb.exe -m
 ```
+
+`-m` 通过命令控制 MSC 发送设备已有的 `MSCDATA` 命令，将命令控制 MSC 切换为系统数据 MSC。
+`-r` 通过命令控制 MSC 发送设备已有的 `REBOOT` 命令，设备重启后恢复命令控制 MSC。
+`-c` 通过 CDC 读取设备状态，不依赖当前 MSC 数据配置。
 
 ### HP39GII系统安装完整流程
 
