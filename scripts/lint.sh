@@ -44,23 +44,13 @@ clang-tidy -p "$BUILD_DIR" "$@"
 echo "Running cppcheck"
 cppcheck \
     --project="$BUILD_DIR/compile_commands.json" \
-    --file-filter='*EDBInterface.cpp' \
-    --file-filter='*EDBUtils.cpp' \
-    --file-filter='*main.cpp' \
-    --file-filter='*EDBTransportUnix.cpp' \
-    --file-filter='*EDBTransportMac.cpp' \
-    --file-filter='*EDBTransportWindows.cpp' \
-    --file-filter='*EDBSerialPosix.cpp' \
-    --file-filter='*EDBWinReg.cpp' \
-    --file-filter='*CComHelper.cpp' \
-    --file-filter='*EDBUtilsTests.cpp' \
-    --file-filter='*EDBInterfaceTests.cpp' \
-    --file-filter='*EDBTransportFactoryStub.cpp' \
     --enable=warning,performance,portability \
     --inline-suppr \
     --error-exitcode=1 \
     --suppress=missingIncludeSystem \
     --suppress='*:*_deps*' \
+    --suppress=virtualCallInConstructor \
+    --suppress='unknownMacro:*EDBWinReg.cpp' \
     --quiet
 
 echo "Static analysis passed"

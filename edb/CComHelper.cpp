@@ -16,7 +16,7 @@ std::wstring stringToWString(const std::string& orig) {
     return result;
 }
 
-bool CComHelper::Open(string com) {
+bool CComHelper::Open(const string& com) {
     Close();
     const std::wstring path = stringToWString(com);
     hCom = CreateFileW(path.c_str(), GENERIC_WRITE | GENERIC_READ, 0, NULL,

@@ -20,7 +20,7 @@ public:
     CComHelper(const CComHelper&) = delete;
     CComHelper& operator=(const CComHelper&) = delete;
 
-    bool Open(string com);
+    bool Open(const string& com);
     bool Set();
     bool Read(char* data, int length, DWORD* dwCount);
     bool Write(char* data, int length);

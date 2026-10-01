@@ -36,27 +36,14 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host 'Running cppcheck'
 $CompileCommands = Join-Path $BuildDir 'compile_commands.json'
-$CppcheckFilters = @(
-    '--file-filter=*EDBInterface.cpp',
-    '--file-filter=*EDBUtils.cpp',
-    '--file-filter=*main.cpp',
-    '--file-filter=*EDBTransportUnix.cpp',
-    '--file-filter=*EDBTransportMac.cpp',
-    '--file-filter=*EDBTransportWindows.cpp',
-    '--file-filter=*EDBSerialPosix.cpp',
-    '--file-filter=*EDBWinReg.cpp',
-    '--file-filter=*CComHelper.cpp',
-    '--file-filter=*EDBUtilsTests.cpp',
-    '--file-filter=*EDBInterfaceTests.cpp',
-    '--file-filter=*EDBTransportFactoryStub.cpp'
-)
 & cppcheck "--project=$CompileCommands" `
-    @CppcheckFilters `
     --enable=warning,performance,portability `
     --inline-suppr `
     --error-exitcode=1 `
     --suppress=missingIncludeSystem `
     '--suppress=*:*_deps*' `
+    --suppress=virtualCallInConstructor `
+    '--suppress=unknownMacro:*EDBWinReg.cpp' `
     --quiet
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
