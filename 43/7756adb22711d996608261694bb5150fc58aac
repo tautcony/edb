@@ -1,0 +1,21 @@
+CMakeLists.txt
+  s_c0d96c2a2234bf::t_6a0a688dc7e4f5 1
+README.md
+  s_c0d96c2a2234bf::t_0621c8e0f7181b 132-133
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "437756adb22711d996608261694bb5150fc58aac",
+  "prompts": {},
+  "sessions": {
+    "s_c0d96c2a2234bf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f6fd-83b1-7641-886c-90d295f4a529",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
