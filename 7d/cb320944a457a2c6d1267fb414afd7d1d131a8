@@ -1,0 +1,27 @@
+README.md
+  s_c0d96c2a2234bf::t_ce86ed6402f1b5 21,45-50
+edb/EDBCLIOptions.cpp
+  s_c0d96c2a2234bf::t_f7b314f990eb74 1-39
+edb/EDBCLIOptions.h
+  s_c0d96c2a2234bf::t_6875ec64086064 1-11
+edb/main.cpp
+  s_c0d96c2a2234bf::t_ed7222a911764e 2,38
+tests/EDBCLIOptionsTests.cpp
+  s_c0d96c2a2234bf::t_25c690b7090ddd 1-38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "7dcb320944a457a2c6d1267fb414afd7d1d131a8",
+  "prompts": {},
+  "sessions": {
+    "s_c0d96c2a2234bf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f6fd-83b1-7641-886c-90d295f4a529",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
