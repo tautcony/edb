@@ -30,8 +30,8 @@ add_executable(edb
 target_include_directories(edb PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/edb
-    ${cli11_SOURCE_DIR}/include
 )
+target_include_directories(edb SYSTEM PRIVATE ${cli11_SOURCE_DIR}/include)
 
 if(BUILD_TESTING)
     include(FetchContent)

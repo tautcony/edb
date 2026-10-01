@@ -16,6 +16,7 @@ foreach ($Tool in @('cmake', 'ninja', 'clang-tidy', 'clang-cl', 'cppcheck')) {
 cmake -S $RootDir -B $BuildDir -G Ninja `
     -DBUILD_TESTING=ON `
     -DCMAKE_EXPORT_COMPILE_COMMANDS=ON `
+    -DCMAKE_C_COMPILER=cl `
     -DCMAKE_CXX_COMPILER=clang-cl `
     -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
