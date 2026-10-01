@@ -79,7 +79,6 @@ bool CComHelper::Write(char* data, int length) {
     if (!bWriteStat || dwWrite != static_cast<DWORD>(length)) {
         return false;
     }
-    PurgeComm(hCom, PURGE_TXABORT | PURGE_RXABORT | PURGE_TXCLEAR | PURGE_RXCLEAR);
     return true;
 }
 
