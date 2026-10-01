@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <cctype>
 using namespace std;
 
 std::wstring stringToWString(const std::string& orig) {
@@ -16,9 +17,28 @@ std::wstring stringToWString(const std::string& orig) {
     return result;
 }
 
+std::string CComHelper::NormalizePortPath(const std::string& com) {
+    if (com.compare(0, 4, "\\\\.\\") == 0 || com.size() <= 3) {
+        return com;
+    }
+
+    const char prefix[] = {'C', 'O', 'M'};
+    for (size_t i = 0; i < 3; ++i) {
+        if (std::toupper(static_cast<unsigned char>(com[i])) != prefix[i]) {
+            return com;
+        }
+    }
+    for (size_t i = 3; i < com.size(); ++i) {
+        if (com[i] < '0' || com[i] > '9') {
+            return com;
+        }
+    }
+    return "\\\\.\\" + com;
+}
+
 bool CComHelper::Open(const string& com) {
     Close();
-    const std::wstring path = stringToWString(com);
+    const std::wstring path = stringToWString(NormalizePortPath(com));
     hCom = CreateFileW(path.c_str(), GENERIC_WRITE | GENERIC_READ, 0, NULL,
                        OPEN_EXISTING, 0, NULL);
 

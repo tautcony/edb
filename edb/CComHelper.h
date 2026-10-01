@@ -15,6 +15,8 @@ private:
     HANDLE hCom = INVALID_HANDLE_VALUE;
 
 public:
+    static std::string NormalizePortPath(const std::string& com);
+
     CComHelper() = default;
     ~CComHelper();
     CComHelper(const CComHelper&) = delete;
