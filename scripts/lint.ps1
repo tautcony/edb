@@ -23,8 +23,12 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $Sources = @(
     (Join-Path $RootDir 'edb/EDBInterface.cpp'),
+    (Join-Path $RootDir 'edb/EDBCLIOptions.cpp'),
     (Join-Path $RootDir 'edb/EDBUtils.cpp'),
     (Join-Path $RootDir 'edb/main.cpp'),
+    (Join-Path $RootDir 'edb/CComHelper.cpp'),
+    (Join-Path $RootDir 'tests/EDBCLIOptionsTests.cpp'),
+    (Join-Path $RootDir 'tests/CComHelperTests.cpp'),
     (Join-Path $RootDir 'tests/EDBUtilsTests.cpp'),
     (Join-Path $RootDir 'tests/EDBInterfaceTests.cpp'),
     (Join-Path $RootDir 'tests/EDBTransportFactoryStub.cpp')

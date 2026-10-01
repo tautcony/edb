@@ -23,6 +23,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_executable(edb
     edb/EDBInterface.cpp
+    edb/EDBCLIOptions.cpp
     edb/EDBUtils.cpp
     edb/main.cpp
 )
@@ -45,16 +46,35 @@ if(BUILD_TESTING)
 
     add_executable(edb_unit_tests
         tests/EDBUtilsTests.cpp
+        tests/EDBCLIOptionsTests.cpp
         tests/EDBInterfaceTests.cpp
         tests/EDBTransportFactoryStub.cpp
+        edb/EDBCLIOptions.cpp
         edb/EDBInterface.cpp
         edb/EDBUtils.cpp
     )
     target_include_directories(edb_unit_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/edb
     )
+    target_include_directories(edb_unit_tests SYSTEM PRIVATE
+        ${cli11_SOURCE_DIR}/include
+    )
     target_link_libraries(edb_unit_tests PRIVATE GTest::gtest_main)
     add_test(NAME edb_unit_tests COMMAND edb_unit_tests)
+
+    if(WIN32)
+        target_sources(edb_unit_tests PRIVATE
+            edb/CComHelper.cpp
+            tests/CComHelperTests.cpp
+        )
+    endif()
+
+    if(UNIX)
+        target_sources(edb_unit_tests PRIVATE
+            edb/EDBSerialPosix.cpp
+            tests/EDBSerialPosixTests.cpp
+        )
+    endif()
 endif()
 
 if(APPLE)

@@ -32,8 +32,12 @@ cmake -S "$ROOT_DIR" -B "$BUILD_DIR" \
 
 set -- \
     "$ROOT_DIR/edb/EDBInterface.cpp" \
+    "$ROOT_DIR/edb/EDBCLIOptions.cpp" \
     "$ROOT_DIR/edb/EDBUtils.cpp" \
     "$ROOT_DIR/edb/main.cpp" \
+    "$ROOT_DIR/edb/EDBSerialPosix.cpp" \
+    "$ROOT_DIR/tests/EDBCLIOptionsTests.cpp" \
+    "$ROOT_DIR/tests/EDBSerialPosixTests.cpp" \
     "$ROOT_DIR/tests/EDBUtilsTests.cpp" \
     "$ROOT_DIR/tests/EDBInterfaceTests.cpp" \
     "$ROOT_DIR/tests/EDBTransportFactoryStub.cpp"
