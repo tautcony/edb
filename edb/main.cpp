@@ -1,4 +1,5 @@
 #include "EDBInterface.h"
+#include "EDBCLIOptions.h"
 #include "EDBLog.h"
 #include "EDBUtils.h"
 
@@ -34,33 +35,7 @@ int run(int argc, char* argv[]) {
     std::string serialPath;
     std::string logLevelOption = "info";
 
-    app.add_option_function<std::vector<std::string>>(
-           "-f,--file",
-           [&imglist, &imageNames](const std::vector<std::string>& values) {
-               if (values.size() < 2 || values.size() > 3) {
-                   throw CLI::ValidationError("--file requires <path> <page> [b]");
-               }
-               flashImg item;
-               if (!parsePage(values[1].c_str(), &item.toPage)) {
-                   throw CLI::ValidationError("Invalid flash page: " + values[1]);
-               }
-               item.f.reset(fopen(values[0].c_str(), "rb"));
-               if (!item.f) {
-                   throw CLI::ValidationError("Unable to open firmware file: " + values[0]);
-               }
-               imageNames.push_back(values[0]);
-               item.filename = const_cast<char*>(imageNames.back().c_str());
-               if (values.size() == 3) {
-                   if (values[2] != "b") {
-                       throw CLI::ValidationError("The optional --file argument must be 'b'");
-                   }
-                   item.bootImg = true;
-               }
-               imglist.push_back(std::move(item));
-           },
-           "Flash a binary image: <path> <page> [b].")
-        ->expected(2, 3)
-        ->multi_option_policy(CLI::MultiOptionPolicy::TakeAll);
+    addFileOption(app, imglist, imageNames);
 
     app.add_option("--log-level", logLevelOption,
                    "Log verbosity: debug, info (default), warn, or error.")

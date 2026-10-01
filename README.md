@@ -18,7 +18,7 @@ EDB 工具支持以下命令行参数：
 Usage: edb [options]
 
 Actions:
-  -f, --file <path> <page> [b]   Flash a binary image; add 'b' for boot image.
+  -f, --file <path> <page> [b]   Flash a binary image; may be repeated. Add 'b' for boot image.
   -m, --msc                      Switch command-control MSC to system-data MSC, then exit.
   -c, --check                    Check the selected transport, then exit.
 
@@ -40,6 +40,12 @@ Other:
 
 ```bash
 edb.exe -f firmware.bin 0
+```
+
+可以重复 `-f`，按顺序烧录多个镜像：
+
+```bash
+edb.exe -f first.bin 64 -f second.bin 128
 ```
 
 ### 使用USB MSC高速模式烧录
