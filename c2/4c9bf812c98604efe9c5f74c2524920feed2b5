@@ -1,0 +1,23 @@
+edb/EDBSerialPosix.cpp
+  s_c0d96c2a2234bf::t_8e81882b8cf329 18-38,105-106,133-134,136-137,139-140,151
+edb/EDBSerialPosix.h
+  s_c0d96c2a2234bf::t_b49b625c9b94e9 6-12
+tests/EDBSerialPosixTests.cpp
+  s_c0d96c2a2234bf::t_6b13304ea4af7d 1-56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "c24c9bf812c98604efe9c5f74c2524920feed2b5",
+  "prompts": {},
+  "sessions": {
+    "s_c0d96c2a2234bf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f6fd-83b1-7641-886c-90d295f4a529",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
