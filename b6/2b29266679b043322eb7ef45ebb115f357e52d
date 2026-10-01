@@ -1,0 +1,23 @@
+edb/CComHelper.cpp
+  s_c0d96c2a2234bf::t_eb0fc44195b4f2 6,20-38,41
+edb/CComHelper.h
+  s_c0d96c2a2234bf::t_c13dcd74eb576b 18-19
+tests/CComHelperTests.cpp
+  s_c0d96c2a2234bf::t_1189b11f545304 1-12
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "b62b29266679b043322eb7ef45ebb115f357e52d",
+  "prompts": {},
+  "sessions": {
+    "s_c0d96c2a2234bf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f6fd-83b1-7641-886c-90d295f4a529",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
