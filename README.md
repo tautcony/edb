@@ -129,6 +129,8 @@ edb/
 
 ## 编译说明
 
+所有平台均需要 CMake 3.24 或更新版本。
+
 ### Windows
 
 项目使用 CMake 生成 Visual Studio 工程并进行编译：
