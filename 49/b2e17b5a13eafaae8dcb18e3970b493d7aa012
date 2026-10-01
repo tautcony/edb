@@ -1,0 +1,21 @@
+.clang-tidy
+  s_9ba0b9773713b8::t_c1405700bff14f 16
+.github/workflows/build.yml
+  s_9ba0b9773713b8::t_637330bb065afd 50-52
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "49b2e17b5a13eafaae8dcb18e3970b493d7aa012",
+  "prompts": {},
+  "sessions": {
+    "s_9ba0b9773713b8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f69a-ecdf-7e22-9eab-1635adf614c1",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
