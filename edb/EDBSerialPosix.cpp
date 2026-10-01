@@ -15,6 +15,27 @@
 #include <termios.h>
 #endif
 
+namespace edb_serial_detail {
+    ssize_t writeAll(int fd, const char* buffer, size_t length,
+                     WriteOperation writeOperation) {
+        size_t written = 0;
+        while (written < length) {
+            const ssize_t result = writeOperation(fd, buffer + written, length - written);
+            if (result < 0) {
+                if (errno == EINTR) {
+                    continue;
+                }
+                return written == 0 ? -1 : static_cast<ssize_t>(written);
+            }
+            if (result == 0) {
+                return static_cast<ssize_t>(written);
+            }
+            written += static_cast<size_t>(result);
+        }
+        return static_cast<ssize_t>(written);
+    }
+} // namespace edb_serial_detail
+
 namespace {
     const char* findSerialPath(const char* preferredPath) {
         if (preferredPath && preferredPath[0] != '\0') {
@@ -81,8 +102,8 @@ int EDBSerialPosix::open(const char* preferredPath) {
     cfsetispeed(&settings, B14400);
     cfsetospeed(&settings, B14400);
     settings.c_cflag |= CLOCAL | CREAD;
-    settings.c_cflag &= ~CSTOPB;
-    settings.c_cflag &= ~CSIZE;
+    settings.c_cflag &= ~static_cast<tcflag_t>(CSTOPB);
+    settings.c_cflag &= ~static_cast<tcflag_t>(CSIZE);
     settings.c_cflag |= CS8;
     settings.c_cc[VMIN] = 0;
     settings.c_cc[VTIME] = 10;
@@ -109,11 +130,14 @@ void EDBSerialPosix::reset(bool binaryMode) {
     int modemBits = 0;
     if (ioctl(fd, TIOCMGET, &modemBits) == 0) {
         if (binaryMode) {
-            modemBits |= TIOCM_RTS;
+            modemBits = static_cast<int>(static_cast<unsigned int>(modemBits) |
+                                         static_cast<unsigned int>(TIOCM_RTS));
         } else {
-            modemBits &= ~TIOCM_RTS;
+            modemBits = static_cast<int>(static_cast<unsigned int>(modemBits) &
+                                         ~static_cast<unsigned int>(TIOCM_RTS));
         }
-        modemBits &= ~TIOCM_DTR;
+        modemBits = static_cast<int>(static_cast<unsigned int>(modemBits) &
+                                     ~static_cast<unsigned int>(TIOCM_DTR));
         ioctl(fd, TIOCMSET, &modemBits);
     }
     usleep(20000);
@@ -124,5 +148,5 @@ std::ptrdiff_t EDBSerialPosix::read(char* buffer, size_t length) {
 }
 
 std::ptrdiff_t EDBSerialPosix::write(const char* buffer, size_t length) {
-    return ::write(fd, buffer, length);
+    return edb_serial_detail::writeAll(fd, buffer, length, ::write);
 }
