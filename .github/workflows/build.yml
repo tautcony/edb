@@ -47,7 +47,9 @@ jobs:
       - name: Install static analysis tools on Windows
         if: matrix.platform == 'windows'
         shell: pwsh
-        run: choco install llvm cppcheck ninja --no-progress -y
+        run: |
+          choco install llvm cppcheck ninja --no-progress -y
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:ProgramFiles\Cppcheck"
 
       - name: Run static analysis on Unix
         if: matrix.platform != 'windows'

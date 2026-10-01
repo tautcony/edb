@@ -13,5 +13,5 @@ Checks: >-
   -performance-enum-size,
   -portability-avoid-pragma-once
 WarningsAsErrors: '*'
-HeaderFilterRegex: '(^|.*/)edb/.*|(^|.*/)tests/.*'
+HeaderFilterRegex: '(^|.*/)(edb/(EDB|CCom|main)|tests/EDB).*'
 FormatStyle: none
