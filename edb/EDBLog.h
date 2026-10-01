@@ -218,7 +218,8 @@ namespace edb_log {
                    << std::setfill(' ') << "] [" << std::left << std::setw(5)
                    << logLevelName(level)
                    << std::right << "] [" << component << "] " << message
-                   << std::endl;
+                   << '\n'
+                   << std::flush;
 
             if (hasProgress) {
                 // Put the progress line back underneath the record just written.

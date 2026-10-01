@@ -7,24 +7,22 @@
 #include <csignal>
 #include <cstdio>
 #include <deque>
+#include <exception>
 #include <iostream>
 #include <string>
 #include <vector>
 
-std::vector<flashImg> imglist;
-std::deque<std::string> imageNames;
-
-EDBInterface edb;
 volatile sig_atomic_t interruptRequested = 0;
 
-void handleInterrupt(int id) {
+extern "C" void handleInterrupt(int id) {
     (void)id;
     interruptRequested = 1;
 }
 
-int main(int argc, char* argv[]) {
-    signal(SIGINT, handleInterrupt);
-
+int run(int argc, char* argv[]) {
+    EDBInterface edb;
+    std::vector<flashImg> imglist;
+    std::deque<std::string> imageNames;
     CLI::App app{"EDB Embedded Device Bootloader"};
     app.set_help_flag("-h,--help", "Show this help and exit.");
 
@@ -38,7 +36,7 @@ int main(int argc, char* argv[]) {
 
     app.add_option_function<std::vector<std::string>>(
            "-f,--file",
-           [](const std::vector<std::string>& values) {
+           [&imglist, &imageNames](const std::vector<std::string>& values) {
                if (values.size() < 2 || values.size() > 3) {
                    throw CLI::ValidationError("--file requires <path> <page> [b]");
                }
@@ -85,7 +83,7 @@ int main(int argc, char* argv[]) {
 
     try {
         if (argc < 2) {
-            std::cout << app.help() << std::endl;
+            std::cout << app.help() << '\n';
             return 1;
         }
         app.parse(argc, argv);
@@ -203,4 +201,17 @@ int main(int argc, char* argv[]) {
         return 130;
     }
     return operationSucceeded ? 0 : 11;
+}
+
+int main(int argc, char* argv[]) {
+    signal(SIGINT, handleInterrupt);
+    try {
+        return run(argc, argv);
+    } catch (const std::exception& error) {
+        std::fprintf(stderr, "Fatal error: %s\n", error.what());
+        return 1;
+    } catch (...) {
+        std::fputs("Fatal error: unknown exception\n", stderr);
+        return 1;
+    }
 }

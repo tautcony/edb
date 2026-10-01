@@ -35,6 +35,7 @@
 build/
 build-package/
 build-tests/
+build-lint*/
 dist/
 
 # VS Code

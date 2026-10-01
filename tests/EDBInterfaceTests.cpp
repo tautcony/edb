@@ -26,12 +26,14 @@ namespace {
         void reset(bool) override { ++resetCount; }
 
         std::ptrdiff_t readCommand(char* buffer, size_t length) override {
-            if (commandReadIndex >= commandResponses.size()) {
+            if (commandReadIndex >= commandResponses.size() || length == 0) {
                 return -1;
             }
             const std::string& response = commandResponses[commandReadIndex++];
-            const size_t count = response.size() < length ? response.size() : length;
+            const size_t maxCount = length - 1;
+            const size_t count = response.size() < maxCount ? response.size() : maxCount;
             memcpy(buffer, response.data(), count);
+            buffer[count] = '\0';
             return static_cast<std::ptrdiff_t>(count);
         }
 
@@ -63,10 +65,10 @@ namespace {
         if (!file) {
             return flashImg();
         }
-        EXPECT_EQ(fwrite(data.data(), 1, data.size(), file), data.size());
-        rewind(file);
         flashImg image;
         image.f.reset(file);
+        EXPECT_EQ(fwrite(data.data(), 1, data.size(), file), data.size());
+        EXPECT_EQ(fseek(file, 0, SEEK_SET), 0);
         image.filename = const_cast<char*>("test.bin");
         image.toPage = page;
         image.bootImg = bootImage;
@@ -136,14 +138,8 @@ TEST(EDBInterfaceTest, FlashesOneCompleteBlockAfterChecksumConfirmation) {
     snprintf(checksumResponse, sizeof(checksumResponse), "CHKSUM:%02x\n", checksum);
     transport->commandResponses = {"READY\n", checksumResponse, "EROK\n", "PGOK\n"};
 
-    FILE* file = tmpfile();
-    ASSERT_NE(file, nullptr);
-    ASSERT_EQ(fwrite(block.data(), 1, block.size(), file), block.size());
-    rewind(file);
-    flashImg image;
-    image.f.reset(file);
+    flashImg image = makeFirmware(block, 64);
     image.filename = const_cast<char*>("one-block.bin");
-    image.toPage = 64;
 
     EXPECT_TRUE(interface->flash(image));
     ASSERT_EQ(transport->dataWriteSizes.size(), 1u);
@@ -156,10 +152,7 @@ TEST(EDBInterfaceTest, EmptyFirmwareDoesNotWriteADataBlock) {
     ASSERT_EQ(interface->open(false), 0);
     transport->commandResponses.push_back("READY\n");
 
-    FILE* file = tmpfile();
-    ASSERT_NE(file, nullptr);
-    flashImg image;
-    image.f.reset(file);
+    flashImg image = makeFirmware(std::vector<char>());
     image.filename = const_cast<char*>("empty.bin");
 
     EXPECT_TRUE(interface->flash(image));

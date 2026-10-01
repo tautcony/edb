@@ -169,6 +169,22 @@ Windows 后端使用 Windows SDK 提供的 Win32 API，链接系统库 `Advapi32
 ./scripts/test.sh
 ```
 
+运行静态分析需要 CMake、clang-tidy 和 cppcheck。Windows 还需要 Ninja，并且要在 Visual Studio Developer PowerShell 或 Developer Command Prompt 中运行：
+
+Linux 和 macOS：
+
+```bash
+./scripts/lint.sh
+```
+
+Windows：
+
+```powershell
+.\scripts\lint.ps1
+```
+
+该检查分析应用和单元测试代码，并在 CI 中与 clang-format 检查一起运行。
+
 ## 注意事项
 
 - 请确保在烧录前选择正确的目标页面

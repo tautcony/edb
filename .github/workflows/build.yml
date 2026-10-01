@@ -11,6 +11,53 @@ permissions:
   contents: read
 
 jobs:
+  static-analysis:
+    name: static-analysis
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-22.04
+            platform: linux
+          - runner: macos-14
+            platform: macos
+          - runner: windows-2022
+            platform: windows
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+
+      - name: Install static analysis tools on Linux
+        if: matrix.platform == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang clang-tidy cppcheck ninja-build
+
+      - name: Install static analysis tools on macOS
+        if: matrix.platform == 'macos'
+        run: |
+          brew install llvm cppcheck
+          echo "$(brew --prefix llvm)/bin" >> "$GITHUB_PATH"
+
+      - name: Set up MSVC developer environment
+        if: matrix.platform == 'windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install static analysis tools on Windows
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: choco install llvm cppcheck ninja --no-progress -y
+
+      - name: Run static analysis on Unix
+        if: matrix.platform != 'windows'
+        run: ./scripts/lint.sh
+
+      - name: Run static analysis on Windows
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: .\scripts\lint.ps1
+
   clang-format:
     name: clang-format
     runs-on: ubuntu-22.04
@@ -28,7 +75,7 @@ jobs:
 
   build:
     name: ${{ matrix.platform }}-${{ matrix.arch }}
-    needs: clang-format
+    needs: [clang-format, static-analysis]
     strategy:
       fail-fast: false
       matrix:

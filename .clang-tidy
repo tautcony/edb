@@ -1,0 +1,17 @@
+# Intentional stream-expression macro syntax and same-type private parameters.
+# The CLI11 argv check is a third-party false positive. Enum storage is not
+# performance-sensitive here, and all supported compilers accept pragma once.
+Checks: >-
+  -*,
+  clang-analyzer-*,
+  bugprone-*,
+  performance-*,
+  portability-*,
+  -bugprone-macro-parentheses,
+  -bugprone-easily-swappable-parameters,
+  -clang-analyzer-security.ArrayBound,
+  -performance-enum-size,
+  -portability-avoid-pragma-once
+WarningsAsErrors: '*'
+HeaderFilterRegex: '(^|.*/)edb/.*|(^|.*/)tests/.*'
+FormatStyle: none

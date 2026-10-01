@@ -3,11 +3,12 @@
 #include "EDBTransport.h"
 #include "EDBUtils.h"
 
+#include <cinttypes>
 #include <cstdint>
+#include <chrono>
 #include <cstdio>
 #include <cstring>
 #include <string>
-#include <time.h>
 #ifdef _WIN32
 #include <malloc.h>
 #include <windows.h>
@@ -16,6 +17,33 @@
 #endif
 
 namespace {
+    int hexDigitValue(char digit) {
+        if (digit >= '0' && digit <= '9') {
+            return digit - '0';
+        }
+        if (digit >= 'a' && digit <= 'f') {
+            return digit - 'a' + 10;
+        }
+        if (digit >= 'A' && digit <= 'F') {
+            return digit - 'A' + 10;
+        }
+        return -1;
+    }
+
+    bool parseChecksum(const char* response, unsigned int* checksum) {
+        if (!response || !checksum || std::memcmp(response, "CHKSUM:", 7) != 0 ||
+            response[9] != '\n') {
+            return false;
+        }
+        const int high = hexDigitValue(response[7]);
+        const int low = hexDigitValue(response[8]);
+        if (high < 0 || low < 0) {
+            return false;
+        }
+        *checksum = static_cast<unsigned int>(high * 16 + low);
+        return true;
+    }
+
     AlignedBuffer alignedBuffer(size_t alignment, size_t size) {
 #ifdef _WIN32
         return AlignedBuffer(static_cast<char*>(_aligned_malloc(size, alignment)));
@@ -30,13 +58,9 @@ namespace {
 } // namespace
 
 long long getTime() {
-#ifdef _WIN32
-    return static_cast<long long>(GetTickCount64());
-#else
-    struct timespec ts;
-    clock_gettime(CLOCK_MONOTONIC, &ts);
-    return (ts.tv_sec * 1000 + ts.tv_nsec / 1000000);
-#endif
+    return std::chrono::duration_cast<std::chrono::milliseconds>(
+               std::chrono::steady_clock::now().time_since_epoch())
+        .count();
 }
 
 EDBInterface::EDBInterface()
@@ -107,7 +131,7 @@ bool EDBInterface::rdDat(char* dat, size_t len, size_t* rbcnt) {
 
 bool EDBInterface::eraseBlock(unsigned int block) {
     char cmdbuf[64];
-    snprintf(cmdbuf, sizeof(cmdbuf), "ERASEB:%d\n", block);
+    snprintf(cmdbuf, sizeof(cmdbuf), "ERASEB:%u\n", block);
     if (!wrStr(cmdbuf)) {
         return false;
     }
@@ -141,8 +165,7 @@ bool EDBInterface::flash(const flashImg& item) {
         EDB_LOG_ERROR("EDB", "Unable to determine firmware file size.");
         return false;
     }
-    rewind(item.f.get());
-    if (ferror(item.f.get())) {
+    if (fseek(item.f.get(), 0, SEEK_SET) != 0) {
         EDB_LOG_ERROR("EDB", "Unable to rewind firmware file.");
         return false;
     }
@@ -150,10 +173,8 @@ bool EDBInterface::flash(const flashImg& item) {
     uint8_t chksum;
     unsigned int rcshkdum;
     long long st;
-    rewind(item.f.get());
-
     uint32_t page_cnt = item.toPage;
-    uint32_t block_cnt = page_cnt / 64;
+    uint32_t block_cnt;
     uint32_t last_block = 0;
     while (true) {
         block_cnt = page_cnt / 64;
@@ -176,7 +197,7 @@ bool EDBInterface::flash(const flashImg& item) {
         }
         reset(EDB_MODE_TEXT);
         if (!wrStr("BUFCHK\n") || !rdDat(cmdbuf, 10, &rbcnt) ||
-            sscanf(cmdbuf, "CHKSUM:%02x\n", &rcshkdum) != 1) {
+            !parseChecksum(cmdbuf, &rcshkdum)) {
             EDB_LOG_ERROR("EDB", "Unable to read device checksum.");
             return false;
         }
@@ -190,7 +211,7 @@ bool EDBInterface::flash(const flashImg& item) {
             EDB_LOG_ERROR("EDB", "Erase block timed out: " << block_cnt);
             return false;
         }
-        snprintf(cmdbuf, sizeof(cmdbuf), "PROGP:%d,%d\n", page_cnt,
+        snprintf(cmdbuf, sizeof(cmdbuf), "PROGP:%" PRIu32 ",%d\n", page_cnt,
                  item.bootImg ? 1 : 0);
         if (!wrStr(cmdbuf)) {
             return false;
@@ -222,7 +243,7 @@ bool EDBInterface::flash(const flashImg& item) {
     edb_log::Logger::endProgress();
     if (item.bootImg) {
         EDB_LOG_INFO("EDB", "Setting NCB...");
-        snprintf(cmdbuf, sizeof(cmdbuf), "MKNCB: %d, %zu\n",
+        snprintf(cmdbuf, sizeof(cmdbuf), "MKNCB: %" PRIu32 ", %zu\n",
                  item.toPage / 64, fsize / 2048);
         if (!wrStr(cmdbuf)) {
             return false;
