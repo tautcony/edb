@@ -1,0 +1,37 @@
+docs/review-2026-10-01/agent-findings.md
+  s_c0d96c2a2234bf::t_b44625d9f7795c 1-29
+docs/review-2026-10-01/fix-checklist.md
+  s_c0d96c2a2234bf::t_e284168b6ebb9d 1-81
+docs/review-2026-10-01/fixes-plan.md
+  s_c0d96c2a2234bf::t_eeaa2f4d64b91d 1-17
+docs/review-2026-10-01/index.md
+  s_c0d96c2a2234bf::t_db107065b056f0 1-49
+docs/review-2026-10-01/phases/phase-0-baseline.md
+  s_c0d96c2a2234bf::t_af1395b6305bc1 1-34
+docs/review-2026-10-01/phases/phase-1-core-flow.md
+  s_c0d96c2a2234bf::t_1a2fc8b13ae56e 1-57
+docs/review-2026-10-01/phases/phase-2-transport.md
+  s_c0d96c2a2234bf::t_a29fcc2511a8fd 1-91
+docs/review-2026-10-01/phases/phase-3-platform.md
+  s_c0d96c2a2234bf::t_5a57933885236f 1-49
+docs/review-2026-10-01/phases/phase-4-crosscutting.md
+  s_c0d96c2a2234bf::t_388f498ebf5f42 1-31
+docs/review-2026-10-01/summary.md
+  s_c0d96c2a2234bf::t_95b629c6dfc44a 1-47
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "3a19c292c04c902413b8dbf74b0e7e1001b89bb5",
+  "prompts": {},
+  "sessions": {
+    "s_c0d96c2a2234bf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f6fd-83b1-7641-886c-90d295f4a529",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
