@@ -1,0 +1,21 @@
+CMakeLists.txt
+  s_9ba0b9773713b8::t_2b9262fcf6dbbb 34
+scripts/lint.ps1
+  s_9ba0b9773713b8::t_7e9ba1eb9ae2da 19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "8669abc4a49a50d43aee42b70921d490cfca3cd7",
+  "prompts": {},
+  "sessions": {
+    "s_9ba0b9773713b8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f69a-ecdf-7e22-9eab-1635adf614c1",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
