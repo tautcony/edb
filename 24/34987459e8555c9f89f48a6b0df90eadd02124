@@ -1,0 +1,25 @@
+edb/CComHelper.cpp
+  s_9ba0b9773713b8::t_7c674eb2cd6238 19
+edb/CComHelper.h
+  s_9ba0b9773713b8::t_41ed9a5c24e3c9 23
+scripts/lint.ps1
+  s_9ba0b9773713b8::t_1498d57d14bf15 45-46
+scripts/lint.sh
+  s_9ba0b9773713b8::t_d9085f5c04a241 52-53
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "2434987459e8555c9f89f48a6b0df90eadd02124",
+  "prompts": {},
+  "sessions": {
+    "s_9ba0b9773713b8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f69a-ecdf-7e22-9eab-1635adf614c1",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
