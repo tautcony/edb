@@ -1,0 +1,23 @@
+CMakeLists.txt
+  s_c0d96c2a2234bf::t_5cc3ccb3d3c134 26,49,52,59-61,64-77
+scripts/lint.ps1
+  s_c0d96c2a2234bf::t_9375ecec168bcc 26,29-31
+scripts/lint.sh
+  s_c0d96c2a2234bf::t_07f656ae90ba86 35,38-40
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "1dec62d7f9061f09bc3107f2392dfd9f56244f92",
+  "prompts": {},
+  "sessions": {
+    "s_c0d96c2a2234bf": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f6fd-83b1-7641-886c-90d295f4a529",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
