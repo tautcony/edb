@@ -1,0 +1,31 @@
+.github/workflows/build.yml
+  s_9ba0b9773713b8::t_4a6a8f6dd0650b 14-60,78
+.gitignore
+  s_9ba0b9773713b8::t_4fac50cf09d1a3 38
+README.md
+  s_9ba0b9773713b8::t_32aebfad000637 172-187
+edb/main.cpp
+  s_9ba0b9773713b8::t_0220cb344b9245 10,17,22-25,39,86,205-217
+scripts/lint.ps1
+  s_9ba0b9773713b8::t_88f718246d33d7 1-62
+scripts/lint.sh
+  s_9ba0b9773713b8::t_2d8a6086ad1116 1-66
+tests/EDBInterfaceTests.cpp
+  s_9ba0b9773713b8::t_2ec0a0cecb882f 29,33-34,36,70-71,141,155
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "437654cf5a8ce40e0ccc4b5d2ad41f0ab5d60004",
+  "prompts": {},
+  "sessions": {
+    "s_9ba0b9773713b8": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a0f69a-ecdf-7e22-9eab-1635adf614c1",
+        "model": "unknown"
+      },
+      "human_author": "TautCony <i@tautcony.xyz>"
+    }
+  }
+}
