@@ -106,7 +106,7 @@ bool CComHelper::Write(char* data, int length) {
 
 bool CComHelper::WriteStr(const char* data) {
     const size_t length = std::strlen(data);
-    if (length > static_cast<size_t>(std::numeric_limits<int>::max())) {
+    if (length > static_cast<size_t>((std::numeric_limits<int>::max)())) {
         return false;
     }
     return Write(const_cast<char*>(data), static_cast<int>(length));
