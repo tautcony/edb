@@ -4,6 +4,8 @@
 #include <iostream>
 #include <vector>
 #include <cctype>
+#include <cstring>
+#include <limits>
 using namespace std;
 
 std::wstring stringToWString(const std::string& orig) {
@@ -103,7 +105,11 @@ bool CComHelper::Write(char* data, int length) {
 }
 
 bool CComHelper::WriteStr(const char* data) {
-    return Write((char*)data, strlen(data));
+    const size_t length = std::strlen(data);
+    if (length > static_cast<size_t>(std::numeric_limits<int>::max())) {
+        return false;
+    }
+    return Write(const_cast<char*>(data), static_cast<int>(length));
 }
 
 void CComHelper::SetDTR(bool set) {
