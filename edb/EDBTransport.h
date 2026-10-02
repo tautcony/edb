@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
 
 enum class EDBTransportMode {
     MassStorage,
@@ -20,4 +21,4 @@ public:
     virtual std::ptrdiff_t writeData(const char* buffer, size_t length) = 0;
 };
 
-EDBTransport* createEDBTransport();
+std::unique_ptr<EDBTransport> createEDBTransport();

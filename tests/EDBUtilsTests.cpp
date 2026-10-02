@@ -6,21 +6,20 @@
 #include <limits>
 
 TEST(ParsePageTest, AcceptsValidRange) {
-    uint32_t page = 0;
-    EXPECT_TRUE(parsePage("0", &page));
-    EXPECT_EQ(page, 0u);
-    EXPECT_TRUE(parsePage("4294967295", &page));
-    EXPECT_EQ(page, (std::numeric_limits<uint32_t>::max)());
+    const auto zero = parsePage("0");
+    ASSERT_TRUE(zero);
+    EXPECT_EQ(*zero, 0u);
+
+    const auto maximum = parsePage("4294967295");
+    ASSERT_TRUE(maximum);
+    EXPECT_EQ(*maximum, (std::numeric_limits<uint32_t>::max)());
 }
 
 TEST(ParsePageTest, RejectsInvalidInput) {
-    uint32_t page = 0;
-    EXPECT_FALSE(parsePage(nullptr, &page));
-    EXPECT_FALSE(parsePage("", &page));
-    EXPECT_FALSE(parsePage("-1", &page));
-    EXPECT_FALSE(parsePage("12x", &page));
-    EXPECT_FALSE(parsePage("4294967296", &page));
-    EXPECT_FALSE(parsePage("1", nullptr));
+    EXPECT_FALSE(parsePage(""));
+    EXPECT_FALSE(parsePage("-1"));
+    EXPECT_FALSE(parsePage("12x"));
+    EXPECT_FALSE(parsePage("4294967296"));
 }
 
 TEST(BlockChecksumTest, UsesSeedAndWrapsAtByteBoundary) {

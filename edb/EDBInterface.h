@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <memory>
+#include <string>
 
 #define EOS_VID 0xCAFE
 #define EOS_PID 0x4003
@@ -38,7 +39,7 @@ typedef struct flashImg {
     using FilePtr = std::unique_ptr<FILE, FileDeleter>;
 
     FilePtr f;
-    char* filename = nullptr;
+    std::string filename;
     uint32_t toPage = 0;
     bool bootImg = false;
 } flashImg;
@@ -49,7 +50,7 @@ private:
     std::unique_ptr<EDBTransport> transport;
     AlignedBuffer wrBuf;
     AlignedBuffer sendBuf;
-    const char* serialPath = nullptr;
+    std::string serialPath;
     bool massStorageMode = true;
 
 public:
@@ -76,6 +77,6 @@ public:
     bool checkViaCdc();
     bool checkSerial();
     void close();
-    void setSerialPort(const char* path);
+    void setSerialPort(std::string path);
     int open(bool mode);
 };

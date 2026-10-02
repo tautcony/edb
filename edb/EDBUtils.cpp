@@ -1,22 +1,21 @@
 #include "EDBUtils.h"
 
-#include <cerrno>
-#include <cstdlib>
-#include <limits>
+#include <charconv>
+#include <system_error>
 
-bool parsePage(const char* text, uint32_t* page) {
-    if (!text || !page || !*text || text[0] == '-') {
-        return false;
+std::optional<uint32_t> parsePage(std::string_view text) {
+    if (text.empty()) {
+        return std::nullopt;
     }
-    errno = 0;
-    char* end = nullptr;
-    const unsigned long value = std::strtoul(text, &end, 10);
-    if (errno == ERANGE || *end != '\0' ||
-        value > (std::numeric_limits<uint32_t>::max)()) {
-        return false;
+
+    uint32_t page = 0;
+    const char* const begin = text.data();
+    const char* const end = begin + text.size();
+    const auto result = std::from_chars(begin, end, page);
+    if (result.ec != std::errc{} || result.ptr != end) {
+        return std::nullopt;
     }
-    *page = static_cast<uint32_t>(value);
-    return true;
+    return page;
 }
 
 unsigned char blockChksum(const char* block, size_t blockSize) {

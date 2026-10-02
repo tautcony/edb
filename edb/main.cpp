@@ -7,7 +7,6 @@
 
 #include <csignal>
 #include <cstdio>
-#include <deque>
 #include <exception>
 #include <iostream>
 #include <string>
@@ -23,7 +22,6 @@ extern "C" void handleInterrupt(int id) {
 int run(int argc, char* argv[]) {
     EDBInterface edb;
     std::vector<flashImg> imglist;
-    std::deque<std::string> imageNames;
     CLI::App app{"EDB Embedded Device Bootloader"};
     app.set_help_flag("-h,--help", "Show this help and exit.");
 
@@ -35,7 +33,7 @@ int run(int argc, char* argv[]) {
     std::string serialPath;
     std::string logLevelOption = "info";
 
-    addFileOption(app, imglist, imageNames);
+    addFileOption(app, imglist);
 
     app.add_option("--log-level", logLevelOption,
                    "Log verbosity: debug, info (default), warn, or error.")
@@ -100,7 +98,7 @@ int run(int argc, char* argv[]) {
         return 2;
     }
     if (hasPort) {
-        edb.setSerialPort(serialPath.c_str());
+        edb.setSerialPort(serialPath);
     }
 
     const bool needsMscTransport = !checkOnly;

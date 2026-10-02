@@ -2,6 +2,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
+#include <string_view>
 
-bool parsePage(const char* text, uint32_t* page);
+std::optional<uint32_t> parsePage(std::string_view text);
 unsigned char blockChksum(const char* block, size_t blockSize);

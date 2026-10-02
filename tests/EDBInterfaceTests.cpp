@@ -7,6 +7,7 @@
 #include <cstring>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace {
@@ -52,10 +53,9 @@ namespace {
     };
 
     std::unique_ptr<EDBInterface> makeInterface(FakeTransport** transport) {
-        auto fake = std::unique_ptr<FakeTransport>(new FakeTransport());
+        auto fake = std::make_unique<FakeTransport>();
         *transport = fake.get();
-        return std::unique_ptr<EDBInterface>(
-            new EDBInterface(std::unique_ptr<EDBTransport>(fake.release())));
+        return std::make_unique<EDBInterface>(std::move(fake));
     }
 
     flashImg makeFirmware(const std::vector<char>& data, uint32_t page = 0,
@@ -69,7 +69,7 @@ namespace {
         image.f.reset(file);
         EXPECT_EQ(fwrite(data.data(), 1, data.size(), file), data.size());
         EXPECT_EQ(fseek(file, 0, SEEK_SET), 0);
-        image.filename = const_cast<char*>("test.bin");
+        image.filename = "test.bin";
         image.toPage = page;
         image.bootImg = bootImage;
         return image;
@@ -139,7 +139,7 @@ TEST(EDBInterfaceTest, FlashesOneCompleteBlockAfterChecksumConfirmation) {
     transport->commandResponses = {"READY\n", checksumResponse, "EROK\n", "PGOK\n"};
 
     flashImg image = makeFirmware(block, 64);
-    image.filename = const_cast<char*>("one-block.bin");
+    image.filename = "one-block.bin";
 
     EXPECT_TRUE(interface->flash(image));
     ASSERT_EQ(transport->dataWriteSizes.size(), 1u);
@@ -153,7 +153,7 @@ TEST(EDBInterfaceTest, EmptyFirmwareDoesNotWriteADataBlock) {
     transport->commandResponses.push_back("READY\n");
 
     flashImg image = makeFirmware(std::vector<char>());
-    image.filename = const_cast<char*>("empty.bin");
+    image.filename = "empty.bin";
 
     EXPECT_TRUE(interface->flash(image));
     EXPECT_TRUE(transport->dataWriteSizes.empty());

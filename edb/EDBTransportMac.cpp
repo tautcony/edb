@@ -337,6 +337,6 @@ namespace {
     };
 } // namespace
 
-EDBTransport* createEDBTransport() {
-    return new EDBTransportMac();
+std::unique_ptr<EDBTransport> createEDBTransport() {
+    return std::make_unique<EDBTransportMac>();
 }

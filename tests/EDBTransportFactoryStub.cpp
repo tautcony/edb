@@ -1,5 +1,5 @@
 #include "EDBTransport.h"
 
-EDBTransport* createEDBTransport() {
-    return nullptr;
+std::unique_ptr<EDBTransport> createEDBTransport() {
+    return {};
 }

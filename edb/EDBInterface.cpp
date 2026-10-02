@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstring>
 #include <string>
+#include <utility>
 #ifdef _WIN32
 #include <malloc.h>
 #include <windows.h>
@@ -330,7 +331,7 @@ namespace {
 } // namespace
 
 bool EDBInterface::checkViaCdc() {
-    std::unique_ptr<EDBTransport> cdcTransport(createEDBTransport());
+    std::unique_ptr<EDBTransport> cdcTransport = createEDBTransport();
     if (!cdcTransport || cdcTransport->open(EDBTransportMode::Serial, serialPath) != 0) {
         EDB_LOG_ERROR("EDB", "Unable to open CDC transport for status check.");
         return false;
@@ -355,8 +356,8 @@ void EDBInterface::close() {
     }
 }
 
-void EDBInterface::setSerialPort(const char* path) {
-    serialPath = path;
+void EDBInterface::setSerialPort(std::string path) {
+    serialPath = std::move(path);
 }
 
 int EDBInterface::open(bool useMassStorage) {
@@ -370,5 +371,5 @@ int EDBInterface::open(bool useMassStorage) {
     }
     return transport->open(useMassStorage ? EDBTransportMode::MassStorage
                                           : EDBTransportMode::Serial,
-                           useMassStorage ? c_mnt_path : serialPath);
+                           useMassStorage ? c_mnt_path : serialPath.c_str());
 }
