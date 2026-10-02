@@ -332,7 +332,8 @@ namespace {
 
 bool EDBInterface::checkViaCdc() {
     std::unique_ptr<EDBTransport> cdcTransport = createEDBTransport();
-    if (!cdcTransport || cdcTransport->open(EDBTransportMode::Serial, serialPath) != 0) {
+    if (!cdcTransport ||
+        cdcTransport->open(EDBTransportMode::Serial, serialPath.c_str()) != 0) {
         EDB_LOG_ERROR("EDB", "Unable to open CDC transport for status check.");
         return false;
     }
