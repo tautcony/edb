@@ -20,8 +20,8 @@
 
 namespace {
     struct DiskOperationContext {
-        CFRunLoopRef runLoop;
-        bool success;
+        CFRunLoopRef runLoop = nullptr;
+        bool success = false;
     };
 
     void diskOperationCallback(DADiskRef, DADissenterRef dissenter, void* context) {
